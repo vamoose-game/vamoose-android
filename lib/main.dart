@@ -1,18 +1,11 @@
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
-void main() {
-  runApp(const VamooseApp());
-}
+import 'app/app_services.dart';
+import 'app/vamoose_app.dart';
 
-class VamooseApp extends StatelessWidget {
-  const VamooseApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      title: 'Vamoose',
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(body: Center(child: Text('vamoose'))),
-    );
-  }
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  runApp(VamooseApp(services: await AppServices.create()));
 }

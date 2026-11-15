@@ -71,7 +71,7 @@ class AppServices {
       adFree: adFree,
       ads: AdMobAdService(AdUnits.fromBuild, adFree),
       purchases: PlayPurchaseService(PlayBillingGateway(), adFree),
-      interstitials: InterstitialPolicy(clock),
+      interstitials: InterstitialPolicy(clock, adFree),
     );
   }
 }

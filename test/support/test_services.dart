@@ -4,6 +4,7 @@ import 'package:vamoose/app/app_services.dart';
 import 'package:vamoose/data/level_catalog.dart';
 import 'package:vamoose/domain/daily_puzzle.dart';
 import 'package:vamoose/domain/level_codec.dart';
+import 'package:flutter/widgets.dart';
 import 'package:vamoose/services/ads/ad_service.dart';
 import 'package:vamoose/services/ads/interstitial_policy.dart';
 import 'package:vamoose/services/game_feedback.dart';
@@ -35,6 +36,30 @@ class SilentHaptics implements Haptics {
 
   @override
   void heavy() {}
+}
+
+class FakeAdService implements AdService {
+  @override
+  bool isReady = true;
+
+  RewardOutcome nextReward = RewardOutcome.earned;
+  int interstitialsShown = 0;
+  int privacyOptionsShown = 0;
+
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Widget banner() => const SizedBox(key: ValueKey('ad-banner'), height: 50);
+
+  @override
+  Future<RewardOutcome> showRewarded() async => nextReward;
+
+  @override
+  Future<void> showInterstitial() async => interstitialsShown++;
+
+  @override
+  Future<void> showPrivacyOptions() async => privacyOptionsShown++;
 }
 
 class FakePurchaseService implements PurchaseService {
@@ -75,7 +100,7 @@ AppServices buildTestServices({
   MemoryStore? store,
   FixedClock? clock,
   RecordingSounds? sounds,
-  AdService ads = const PlaceholderAdService(),
+  AdService? ads,
 }) {
   final memory = store ?? MemoryStore();
   final time = clock ?? FixedClock(DateTime(2026, 11, 15, 17, 47, 20));
@@ -95,7 +120,7 @@ AppServices buildTestServices({
       settings: settings,
     ),
     adFree: adFree,
-    ads: ads,
+    ads: ads ?? FakeAdService(),
     purchases: FakePurchaseService(adFree),
     interstitials: InterstitialPolicy(time),
   );

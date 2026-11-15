@@ -1,30 +1,17 @@
+import 'package:flutter/widgets.dart';
+
+enum RewardOutcome { earned, skipped, unavailable }
+
 abstract interface class AdService {
-  bool get showsBanners;
+  bool get isReady;
 
-  bool get offersRewardedAds;
+  Future<void> initialize();
 
-  Future<bool> showRewarded();
+  Widget banner();
+
+  Future<RewardOutcome> showRewarded();
 
   Future<void> showInterstitial();
 
   Future<void> showPrivacyOptions();
-}
-
-class PlaceholderAdService implements AdService {
-  const PlaceholderAdService();
-
-  @override
-  bool get showsBanners => true;
-
-  @override
-  bool get offersRewardedAds => true;
-
-  @override
-  Future<bool> showRewarded() async => false;
-
-  @override
-  Future<void> showInterstitial() async {}
-
-  @override
-  Future<void> showPrivacyOptions() async {}
 }

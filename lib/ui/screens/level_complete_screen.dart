@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../app/app_services.dart';
 import '../../domain/star_rating.dart';
+import '../../services/ads/ad_service.dart';
 import '../../state/hint_wallet.dart';
 import '../formatting.dart';
 import '../game/game_mode.dart';
@@ -16,6 +17,7 @@ import '../theme/palette.dart';
 import '../widgets/confetti.dart';
 import '../widgets/key_button.dart';
 import '../widgets/surface_card.dart';
+import '../widgets/toast.dart';
 
 class LevelCompleteScreen extends StatefulWidget {
   const LevelCompleteScreen({super.key, required this.result});
@@ -97,8 +99,20 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
 
   Future<void> _watchAd() async {
     final wallet = context.read<HintWallet>();
-    if (await _services.ads.showRewarded()) {
+    final outcome = await _services.ads.showRewarded();
+    if (outcome == RewardOutcome.earned) {
       await wallet.add(1);
+    }
+    if (!mounted) {
+      return;
+    }
+    switch (outcome) {
+      case RewardOutcome.earned:
+        Toast.show(context, '+1 hint added');
+      case RewardOutcome.unavailable:
+        Toast.show(context, 'No video right now. Try again soon.');
+      case RewardOutcome.skipped:
+        break;
     }
   }
 
@@ -217,7 +231,7 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
                       ),
                     ],
                   ),
-                  if (_services.ads.offersRewardedAds) ...[
+                  if (_services.ads.isReady) ...[
                     const SizedBox(height: 12),
                     KeyButton(
                       tone: KeyTone.reward,

@@ -187,14 +187,15 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                const _LinkRow(
+                _LinkRow(
                   icon: Icons.description_outlined,
                   title: 'Privacy policy',
-                  trailing: Icon(
+                  trailing: const Icon(
                     Icons.north_east_rounded,
                     color: Palette.slate,
                   ),
-                  onTap: null,
+                  onTap: () =>
+                      services.links.open(Uri.parse(AppInfo.privacyPolicyUrl)),
                 ),
               ],
             ),

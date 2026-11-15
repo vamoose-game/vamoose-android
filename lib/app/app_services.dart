@@ -12,6 +12,7 @@ import '../services/ads/interstitial_policy.dart';
 import '../services/audio_player_sound_effects.dart';
 import '../services/game_feedback.dart';
 import '../services/haptics.dart';
+import '../services/link_opener.dart';
 import '../services/purchases/play_billing_gateway.dart';
 import '../services/purchases/play_purchase_service.dart';
 import '../services/purchases/purchase_service.dart';
@@ -34,6 +35,7 @@ class AppServices {
     required this.ads,
     required this.purchases,
     required this.interstitials,
+    required this.links,
   });
 
   final LevelCatalog levels;
@@ -47,6 +49,7 @@ class AppServices {
   final AdService ads;
   final PurchaseService purchases;
   final InterstitialPolicy interstitials;
+  final LinkOpener links;
 
   static Future<AppServices> create() async {
     const clock = SystemClock();
@@ -72,6 +75,7 @@ class AppServices {
       ads: AdMobAdService(AdUnits.fromBuild, adFree),
       purchases: PlayPurchaseService(PlayBillingGateway(), adFree),
       interstitials: InterstitialPolicy(clock, adFree),
+      links: const ExternalLinkOpener(),
     );
   }
 }

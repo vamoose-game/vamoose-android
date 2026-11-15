@@ -225,13 +225,16 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                     Expanded(
                       child: KeyButton(
                         onPressed: _restart,
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.restart_alt_rounded),
-                            SizedBox(width: 10),
-                            Text('Restart'),
-                          ],
+                        child: const FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.restart_alt_rounded),
+                              SizedBox(width: 10),
+                              Text('Restart'),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -241,15 +244,18 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                         tone: KeyTone.hint,
                         onPressed: _hint,
                         semanticLabel: 'Hint, $hints left',
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.lightbulb_outline_rounded),
-                            const SizedBox(width: 8),
-                            const Text('Hint'),
-                            const SizedBox(width: 10),
-                            _CountBadge(count: hints),
-                          ],
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.lightbulb_outline_rounded),
+                              const SizedBox(width: 8),
+                              const Text('Hint'),
+                              const SizedBox(width: 10),
+                              _CountBadge(count: hints),
+                            ],
+                          ),
                         ),
                       ),
                     ),

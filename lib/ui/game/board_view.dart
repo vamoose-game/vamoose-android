@@ -109,7 +109,7 @@ class _BoardViewState extends State<BoardView> {
                   block,
                   cell,
                   _PlayableBlock(
-                    key: ValueKey(block.id),
+                    key: ValueKey('block-${block.id}'),
                     block: block,
                     look: _lookOf(block),
                     bumpCount: _bumps[block.id] ?? 0,

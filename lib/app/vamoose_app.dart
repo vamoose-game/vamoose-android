@@ -26,6 +26,7 @@ class VamooseApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: services.progress),
         ChangeNotifierProvider.value(value: services.hints),
         ChangeNotifierProvider.value(value: services.daily),
+        ChangeNotifierProvider.value(value: services.adFree),
       ],
       child: MaterialApp(
         title: AppInfo.name,

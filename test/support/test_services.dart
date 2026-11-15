@@ -6,10 +6,11 @@ import 'package:vamoose/domain/daily_puzzle.dart';
 import 'package:vamoose/domain/level_codec.dart';
 import 'package:vamoose/services/ads/ad_service.dart';
 import 'package:vamoose/services/ads/interstitial_policy.dart';
-import 'package:vamoose/services/ads/purchase_service.dart';
 import 'package:vamoose/services/game_feedback.dart';
 import 'package:vamoose/services/haptics.dart';
+import 'package:vamoose/services/purchases/purchase_service.dart';
 import 'package:vamoose/services/sound_effects.dart';
+import 'package:vamoose/state/ad_free_controller.dart';
 import 'package:vamoose/state/daily_controller.dart';
 import 'package:vamoose/state/hint_wallet.dart';
 import 'package:vamoose/state/progress_controller.dart';
@@ -36,6 +37,36 @@ class SilentHaptics implements Haptics {
   void heavy() {}
 }
 
+class FakePurchaseService implements PurchaseService {
+  FakePurchaseService(this.adFree);
+
+  final AdFreeController adFree;
+  PurchaseOutcome nextOutcome = PurchaseOutcome.purchased;
+  bool ownsRemoveAds = false;
+
+  @override
+  String? removeAdsPrice = '\$2.99';
+
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Future<PurchaseOutcome> buyRemoveAds() async {
+    if (nextOutcome == PurchaseOutcome.purchased) {
+      await adFree.grant();
+    }
+    return nextOutcome;
+  }
+
+  @override
+  Future<bool> restorePurchases() async {
+    if (ownsRemoveAds) {
+      await adFree.grant();
+    }
+    return adFree.adsRemoved;
+  }
+}
+
 LevelCatalog loadLevelCatalog() => LevelCatalog(
   LevelCodec.decode(File(LevelCatalog.assetPath).readAsStringSync()),
 );
@@ -50,6 +81,7 @@ AppServices buildTestServices({
   final time = clock ?? FixedClock(DateTime(2026, 11, 15, 17, 47, 20));
   final levels = loadLevelCatalog();
   final settings = SettingsController(memory);
+  final adFree = AdFreeController(memory);
   return AppServices(
     levels: levels,
     settings: settings,
@@ -62,8 +94,9 @@ AppServices buildTestServices({
       haptics: SilentHaptics(),
       settings: settings,
     ),
+    adFree: adFree,
     ads: ads,
-    purchases: const PlaceholderPurchaseService(),
+    purchases: FakePurchaseService(adFree),
     interstitials: InterstitialPolicy(time),
   );
 }

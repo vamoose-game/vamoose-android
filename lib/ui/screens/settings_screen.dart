@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../../app/app_info.dart';
 import '../../app/app_services.dart';
+import '../../services/purchases/purchase_service.dart';
+import '../../state/ad_free_controller.dart';
 import '../../state/daily_controller.dart';
 import '../../state/progress_controller.dart';
 import '../../state/settings_controller.dart';
@@ -11,6 +13,7 @@ import '../theme/app_text.dart';
 import '../theme/palette.dart';
 import '../widgets/page_header.dart';
 import '../widgets/surface_card.dart';
+import '../widgets/toast.dart';
 import 'how_to_play_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -52,10 +55,41 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
+  Future<void> _buyRemoveAds(BuildContext context) async {
+    final outcome = await context.read<AppServices>().purchases.buyRemoveAds();
+    final message = switch (outcome) {
+      PurchaseOutcome.purchased => 'Ads removed. Thank you!',
+      PurchaseOutcome.pending => 'Payment pending. Ads go away once it clears.',
+      PurchaseOutcome.canceled => null,
+      PurchaseOutcome.failed => 'Purchase did not go through. Try again.',
+      PurchaseOutcome.unavailable => 'The store is not available right now.',
+    };
+    if (message != null && context.mounted) {
+      Toast.show(context, message);
+    }
+  }
+
+  Future<void> _restore(BuildContext context) async {
+    final restored = await context
+        .read<AppServices>()
+        .purchases
+        .restorePurchases();
+    if (context.mounted) {
+      Toast.show(
+        context,
+        restored
+            ? 'Purchase restored. Ads removed.'
+            : 'No purchase to restore.',
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsController>();
     final services = context.read<AppServices>();
+    final adsRemoved = context.watch<AdFreeController>().adsRemoved;
+    final price = services.purchases.removeAdsPrice;
     return Scaffold(
       body: SafeArea(
         child: ListView(
@@ -91,30 +125,40 @@ class SettingsScreen extends StatelessWidget {
             const _SectionLabel('ADS & PRIVACY'),
             _Group(
               children: [
-                _LinkRow(
-                  icon: Icons.block_rounded,
-                  iconColor: Palette.alert,
-                  title: 'Remove ads',
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Palette.sun,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      services.purchases.removeAdsPrice,
-                      style: AppText.label.copyWith(color: Palette.ink),
-                    ),
+                if (adsRemoved)
+                  const _LinkRow(
+                    icon: Icons.check_circle_outline_rounded,
+                    iconColor: Palette.down,
+                    title: 'Ads removed',
+                    onTap: null,
+                  )
+                else
+                  _LinkRow(
+                    icon: Icons.block_rounded,
+                    iconColor: Palette.alert,
+                    title: 'Remove ads',
+                    trailing: price == null
+                        ? null
+                        : Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Palette.sun,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Text(
+                              price,
+                              style: AppText.label.copyWith(color: Palette.ink),
+                            ),
+                          ),
+                    onTap: () => _buyRemoveAds(context),
                   ),
-                  onTap: services.purchases.buyRemoveAds,
-                ),
                 _LinkRow(
                   icon: Icons.restore_rounded,
                   title: 'Restore purchase',
-                  onTap: services.purchases.restorePurchases,
+                  onTap: () => _restore(context),
                 ),
                 _LinkRow(
                   icon: Icons.shield_outlined,

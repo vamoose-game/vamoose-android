@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/app_services.dart';
+import '../../state/ad_free_controller.dart';
 import '../theme/app_text.dart';
 import '../theme/palette.dart';
 
@@ -10,7 +11,10 @@ class AdBannerSlot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!context.read<AppServices>().ads.showsBanners) {
+    final adsRemoved = context.select<AdFreeController, bool>(
+      (adFree) => adFree.adsRemoved,
+    );
+    if (adsRemoved || !context.read<AppServices>().ads.showsBanners) {
       return const SizedBox.shrink();
     }
     return Padding(

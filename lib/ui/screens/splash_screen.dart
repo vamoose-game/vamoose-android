@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/app_services.dart';
 import '../../state/settings_controller.dart';
 import '../navigation.dart';
 import '../theme/app_text.dart';
@@ -16,6 +17,7 @@ class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   static const Duration duration = Duration(milliseconds: 1400);
+  static const Duration storeTimeout = Duration(seconds: 8);
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -31,7 +33,21 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
-    unawaited(_progress.forward().whenComplete(_continue));
+    unawaited(_start());
+  }
+
+  Future<void> _start() async {
+    final services = context.read<AppServices>();
+    await Future.wait([_progress.forward(), _prepare(services)]);
+    _continue();
+  }
+
+  Future<void> _prepare(AppServices services) async {
+    try {
+      await services.purchases.initialize().timeout(SplashScreen.storeTimeout);
+    } on Object {
+      return;
+    }
   }
 
   @override

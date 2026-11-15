@@ -13,14 +13,14 @@ const _recipes = [
   _Recipe(blocksFrom: 15, blocksTo: 19, twistFrom: 0.1, twistTo: 0.3),
   _Recipe(blocksFrom: 18, blocksTo: 22, twistFrom: 0.3, twistTo: 0.5),
   _Recipe(blocksFrom: 20, blocksTo: 24, twistFrom: 0.4, twistTo: 0.6),
-  _Recipe(blocksFrom: 20, blocksTo: 28, twistFrom: 0.3, twistTo: 0.5),
-  _Recipe(blocksFrom: 24, blocksTo: 30, twistFrom: 0.4, twistTo: 0.6),
-  _Recipe(blocksFrom: 26, blocksTo: 32, twistFrom: 0.5, twistTo: 0.7),
-  _Recipe(blocksFrom: 28, blocksTo: 34, twistFrom: 0.6, twistTo: 0.8),
-  _Recipe(blocksFrom: 30, blocksTo: 38, twistFrom: 0.5, twistTo: 0.7),
-  _Recipe(blocksFrom: 34, blocksTo: 42, twistFrom: 0.6, twistTo: 0.8),
-  _Recipe(blocksFrom: 38, blocksTo: 46, twistFrom: 0.7, twistTo: 0.9),
-  _Recipe(blocksFrom: 42, blocksTo: 50, twistFrom: 0.8, twistTo: 1),
+  _Recipe(blocksFrom: 20, blocksTo: 25, twistFrom: 0.3, twistTo: 0.5),
+  _Recipe(blocksFrom: 22, blocksTo: 27, twistFrom: 0.4, twistTo: 0.6),
+  _Recipe(blocksFrom: 24, blocksTo: 29, twistFrom: 0.5, twistTo: 0.7),
+  _Recipe(blocksFrom: 26, blocksTo: 31, twistFrom: 0.6, twistTo: 0.8),
+  _Recipe(blocksFrom: 28, blocksTo: 34, twistFrom: 0.5, twistTo: 0.7),
+  _Recipe(blocksFrom: 30, blocksTo: 36, twistFrom: 0.6, twistTo: 0.8),
+  _Recipe(blocksFrom: 32, blocksTo: 38, twistFrom: 0.7, twistTo: 0.9),
+  _Recipe(blocksFrom: 34, blocksTo: 40, twistFrom: 0.8, twistTo: 1),
 ];
 
 void main() {

@@ -43,8 +43,15 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _prepare(AppServices services) async {
+    await Future.wait([
+      _bounded(services.ads.initialize()),
+      _bounded(services.purchases.initialize()),
+    ]);
+  }
+
+  Future<void> _bounded(Future<void> task) async {
     try {
-      await services.purchases.initialize().timeout(SplashScreen.storeTimeout);
+      await task.timeout(SplashScreen.storeTimeout);
     } on Object {
       return;
     }

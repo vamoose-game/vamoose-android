@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/app_services.dart';
+import '../../services/ads/ad_service.dart';
 import '../../state/hint_wallet.dart';
 import '../theme/app_text.dart';
 import '../theme/motion.dart';
@@ -23,16 +24,26 @@ abstract final class OutOfHintsSheet {
   }
 }
 
-class _OutOfHints extends StatelessWidget {
+class _OutOfHints extends StatefulWidget {
   const _OutOfHints();
 
-  Future<void> _watch(BuildContext context) async {
+  @override
+  State<_OutOfHints> createState() => _OutOfHintsState();
+}
+
+class _OutOfHintsState extends State<_OutOfHints> {
+  bool _noVideo = false;
+
+  Future<void> _watch() async {
     final services = context.read<AppServices>();
     final wallet = context.read<HintWallet>();
     final navigator = Navigator.of(context);
-    if (await services.ads.showRewarded()) {
+    final outcome = await services.ads.showRewarded();
+    if (outcome == RewardOutcome.earned) {
       await wallet.add(1);
       navigator.pop(true);
+    } else if (mounted) {
+      setState(() => _noVideo = outcome == RewardOutcome.unavailable);
     }
   }
 
@@ -84,7 +95,7 @@ class _OutOfHints extends StatelessWidget {
             const SizedBox(height: 22),
             KeyButton(
               tone: KeyTone.primary,
-              onPressed: () => _watch(context),
+              onPressed: _watch,
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -94,6 +105,15 @@ class _OutOfHints extends StatelessWidget {
                 ],
               ),
             ),
+            if (_noVideo)
+              const Padding(
+                padding: EdgeInsets.only(top: 10),
+                child: Text(
+                  'No video right now. Try again soon.',
+                  style: AppText.body,
+                  textAlign: TextAlign.center,
+                ),
+              ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
               child: Text(

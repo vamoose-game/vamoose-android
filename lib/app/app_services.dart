@@ -6,6 +6,8 @@ import '../data/level_catalog.dart';
 import '../data/shared_preferences_store.dart';
 import '../domain/daily_puzzle.dart';
 import '../services/ads/ad_service.dart';
+import '../services/ads/ad_units.dart';
+import '../services/ads/admob_ad_service.dart';
 import '../services/ads/interstitial_policy.dart';
 import '../services/audio_player_sound_effects.dart';
 import '../services/game_feedback.dart';
@@ -67,7 +69,7 @@ class AppServices {
         settings: settings,
       ),
       adFree: adFree,
-      ads: const PlaceholderAdService(),
+      ads: AdMobAdService(AdUnits.fromBuild, adFree),
       purchases: PlayPurchaseService(PlayBillingGateway(), adFree),
       interstitials: InterstitialPolicy(clock),
     );

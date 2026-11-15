@@ -56,16 +56,16 @@ flutter test
 1. Create an upload key once and keep a backup of the file and passwords:
 
 ```bash
-keytool -genkey -v -keystore ~/vamoose-upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+keytool -genkey -v -keystore "$HOME\vamoose-upload.jks" -keyalg RSA -keysize 2048 -validity 10000 -alias upload
 ```
 
-2. Create `android/key.properties` (git ignores it):
+2. Create `android/key.properties` (git ignores it). Use forward slashes in the path; keytool uses one password for both entries:
 
 ```properties
-storePassword=YOUR_STORE_PASSWORD
-keyPassword=YOUR_KEY_PASSWORD
+storePassword=YOUR_PASSWORD
+keyPassword=YOUR_PASSWORD
 keyAlias=upload
-storeFile=/home/you/vamoose-upload.jks
+storeFile=C:/Users/you/vamoose-upload.jks
 ```
 
 3. In AdMob, under Privacy & messaging › European regulations, publish a message; it needs the privacy policy URL.

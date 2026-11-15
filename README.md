@@ -50,7 +50,6 @@ flutter test
 | Rewarded | Out of hints, Board clear | +1 hint, given only when the video reward is earned |
 | Remove ads | Settings | One-time product `remove_ads`; Restore purchase brings it back |
 
-Without your own IDs the app shows Google test ads.
 
 ## Release
 
@@ -69,22 +68,16 @@ keyAlias=upload
 storeFile=/home/you/vamoose-upload.jks
 ```
 
-3. In AdMob, add the app and three ad units (adaptive banner, interstitial, rewarded). Under Privacy & messaging › European regulations, publish a message; it needs a privacy policy URL.
-4. Add the AdMob app ID to `android/gradle.properties`:
-
-```properties
-admobAppId=ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY
-```
-
-5. Build the bundle with your ad unit IDs:
+3. In AdMob, under Privacy & messaging › European regulations, publish a message; it needs the privacy policy URL.
+4. Build the bundle. Release builds use the Vamoose AdMob app ID (`android/gradle.properties`) and ad units (`lib/services/ads/ad_units.dart`); debug builds use Google test ads.
 
 ```bash
-flutter build appbundle --dart-define=ADMOB_BANNER_ID=ca-app-pub-XXX/AAA --dart-define=ADMOB_INTERSTITIAL_ID=ca-app-pub-XXX/BBB --dart-define=ADMOB_REWARDED_ID=ca-app-pub-XXX/CCC
+flutter build appbundle
 ```
 
-6. In Play Console, create the app and upload `build/app/outputs/bundle/release/app-release.aab` to Testing › Internal testing.
-7. Set up a payments profile, then go to Monetize with Play › Products › One-time products and create `remove_ads` with a purchase option and price, then Activate.
-8. Add tester Gmail accounts under Settings › License testing and to the internal test. Testers install from the opt-in link; purchases do not work in builds installed with `flutter run`.
+5. In Play Console, create the app and upload `build/app/outputs/bundle/release/app-release.aab` to Testing › Internal testing.
+6. Set up a payments profile, then go to Monetize with Play › Products › One-time products and create `remove_ads` with a purchase option and price, then Activate.
+7. Add tester Gmail accounts under Settings › License testing and to the internal test. Testers install from the opt-in link; purchases do not work in builds installed with `flutter run`.
 
 ## Regenerate assets
 

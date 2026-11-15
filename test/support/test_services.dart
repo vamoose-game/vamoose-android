@@ -9,6 +9,7 @@ import 'package:vamoose/services/ads/ad_service.dart';
 import 'package:vamoose/services/ads/interstitial_policy.dart';
 import 'package:vamoose/services/game_feedback.dart';
 import 'package:vamoose/services/haptics.dart';
+import 'package:vamoose/services/link_opener.dart';
 import 'package:vamoose/services/purchases/purchase_service.dart';
 import 'package:vamoose/services/sound_effects.dart';
 import 'package:vamoose/state/ad_free_controller.dart';
@@ -36,6 +37,16 @@ class SilentHaptics implements Haptics {
 
   @override
   void heavy() {}
+}
+
+class RecordingLinkOpener implements LinkOpener {
+  final List<Uri> opened = [];
+
+  @override
+  Future<bool> open(Uri link) async {
+    opened.add(link);
+    return true;
+  }
 }
 
 class FakeAdService implements AdService {
@@ -123,5 +134,6 @@ AppServices buildTestServices({
     ads: ads ?? FakeAdService(),
     purchases: FakePurchaseService(adFree),
     interstitials: InterstitialPolicy(time, adFree),
+    links: RecordingLinkOpener(),
   );
 }

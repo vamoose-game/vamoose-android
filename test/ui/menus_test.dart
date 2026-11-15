@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vamoose/ui/screens/levels_screen.dart';
+import 'package:vamoose/app/app_info.dart';
 import 'package:vamoose/ui/screens/settings_screen.dart';
 
 import '../support/pumping.dart';
@@ -52,6 +53,20 @@ void main() {
     await tester.tapAndWait(find.text('Reset progress'));
     await tester.tapAndWait(find.text('Reset'));
     expect(services.progress.totalStars, 0);
+
+    await tester.close();
+  });
+
+  testWidgets('privacy policy opens the published page', (tester) async {
+    final services = buildTestServices();
+    await tester.launch(services, home: const SettingsScreen());
+
+    await tester.scrollUntilVisible(find.text('Privacy policy'), 200);
+    await tester.tapAndWait(find.text('Privacy policy'));
+
+    expect((services.links as RecordingLinkOpener).opened, [
+      Uri.parse(AppInfo.privacyPolicyUrl),
+    ]);
 
     await tester.close();
   });

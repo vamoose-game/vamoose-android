@@ -122,6 +122,6 @@ AppServices buildTestServices({
     adFree: adFree,
     ads: ads ?? FakeAdService(),
     purchases: FakePurchaseService(adFree),
-    interstitials: InterstitialPolicy(time),
+    interstitials: InterstitialPolicy(time, adFree),
   );
 }

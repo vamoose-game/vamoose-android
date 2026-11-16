@@ -1,7 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
-import '../state/settings_controller.dart';
 import '../ui/screens/splash_screen.dart';
 import '../ui/theme/app_theme.dart';
 import '../ui/widgets/key_press_sound.dart';
@@ -14,6 +13,8 @@ class VamooseApp extends StatelessWidget {
     required this.services,
     this.home = const SplashScreen(),
   });
+
+  static const double maxTextScale = 1.2;
 
   final AppServices services;
   final Widget home;
@@ -34,14 +35,15 @@ class VamooseApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: AppTheme.build(),
         builder: (context, child) {
-          final scale = context.select<SettingsController, double>(
-            (settings) => settings.textScale,
-          );
+          final media = MediaQuery.of(context);
           return KeyPressSound(
             onPress: services.feedback.keyPressed,
             child: MediaQuery(
-              data: MediaQuery.of(context)
-                  .copyWith(textScaler: TextScaler.linear(scale)),
+              data: media.copyWith(
+                textScaler: media.textScaler.clamp(
+                  maxScaleFactor: maxTextScale,
+                ),
+              ),
               child: child!,
             ),
           );

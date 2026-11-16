@@ -22,6 +22,15 @@ abstract final class AppText {
     color: Palette.ink,
   );
 
+  static const TextStyle pageTitle = TextStyle(
+    fontFamily: family,
+    fontWeight: FontWeight.w700,
+    fontSize: 26,
+    height: 1.1,
+    letterSpacing: -0.5,
+    color: Palette.ink,
+  );
+
   static const TextStyle heading = TextStyle(
     fontFamily: family,
     fontWeight: FontWeight.w700,

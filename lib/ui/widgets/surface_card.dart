@@ -9,12 +9,14 @@ class SurfaceCard extends StatelessWidget {
     this.padding = const EdgeInsets.all(18),
     this.radius = 22,
     this.color = Palette.white,
+    this.raised = false,
   });
 
   final Widget child;
   final EdgeInsets padding;
   final double radius;
   final Color color;
+  final bool raised;
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +24,15 @@ class SurfaceCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(radius),
-        boxShadow: const [BoxShadow(color: Palette.edge, offset: Offset(0, 3))],
+        boxShadow: raised
+            ? const [
+                BoxShadow(
+                  color: Color(0x171B2340),
+                  offset: Offset(0, 18),
+                  blurRadius: 40,
+                ),
+              ]
+            : null,
       ),
       child: Padding(padding: padding, child: child),
     );

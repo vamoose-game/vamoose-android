@@ -15,8 +15,19 @@ abstract final class Palette {
   static const Color left = Color(0xFF8457F0);
   static const Color sun = Color(0xFFFFC23D);
   static const Color alert = Color(0xFFD9472A);
-  static const Color locked = Color(0xFFE2E7F1);
-  static const Color scrim = Color(0x991B2340);
+  static const Color line = Color(0xFFE3E8F3);
+  static const Color muted = Color(0xFFC5CDDF);
+  static const Color lockedText = Color(0xFF5E6888);
+  static const Color sunEdge = Color(0xFFD99A12);
+  static const Color starStroke = Color(0xFFC98A00);
+  static const Color cream = Color(0xFFFFF4D6);
+  static const Color creamEdge = Color(0xFFF2D98E);
+  static const Color blueTint = Color(0xFFE6ECFE);
+  static const Color orangeTint = Color(0xFFFDE9E4);
+  static const Color switchOff = Color(0xFF8C96B3);
+  static const Color danger = Color(0xFFC2391D);
+  static const Color dashed = Color(0xFFAEB7CE);
+  static const Color scrim = Color(0x8C1B2340);
 
   static Color forDirection(Direction direction) => switch (direction) {
     Direction.up => up,
@@ -25,9 +36,9 @@ abstract final class Palette {
     Direction.left => left,
   };
 
-  static Color shade(Color color) => Color.lerp(color, ink, 0.22)!;
+  static Color darken(Color color, double amount) =>
+      Color.alphaBlend(Color.fromRGBO(0, 0, 0, amount), color);
 
-  static Color faded(Color color) => Color.lerp(color, white, 0.62)!;
-
-  static Color tint(Color color) => Color.lerp(color, white, 0.86)!;
+  static Color lighten(Color color, double amount) =>
+      Color.alphaBlend(Color.fromRGBO(255, 255, 255, amount), color);
 }

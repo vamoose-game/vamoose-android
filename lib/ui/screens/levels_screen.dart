@@ -203,7 +203,7 @@ class _LevelTile extends StatelessWidget {
         label: 'Level $level, locked',
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: Palette.locked,
+            color: Palette.line,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Column(

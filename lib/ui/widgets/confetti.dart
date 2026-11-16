@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:flutter/widgets.dart';
 
-import '../theme/motion.dart';
 import '../theme/palette.dart';
 
 class Confetti extends StatefulWidget {
@@ -18,7 +17,7 @@ class _ConfettiState extends State<Confetti>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: Motion.confetti,
+    duration: const Duration(seconds: 2),
   )..forward();
   late final List<_Piece> _pieces = _Piece.scatter(widget.pieces, Random(7));
 

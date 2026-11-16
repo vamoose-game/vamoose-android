@@ -143,7 +143,7 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
                           ScaleTransition(
                             scale: CurvedAnimation(
                               parent: _badge,
-                              curve: Motion.badgeCurve,
+                              curve: Motion.popCurve,
                             ),
                             child: const SizedBox.square(
                               dimension: 124,
@@ -269,7 +269,7 @@ class _StarRow extends StatelessWidget {
           ScaleTransition(
             scale: CurvedAnimation(
               parent: controllers[index],
-              curve: Motion.badgeCurve,
+              curve: Motion.popCurve,
             ),
             child: Icon(Icons.star_rounded, size: size, color: Palette.sun),
           ),

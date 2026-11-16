@@ -152,6 +152,7 @@ class HomeScreen extends StatelessWidget {
                     child: _MenuCard(
                       icon: Icons.grid_view_rounded,
                       color: Palette.up,
+                      tint: Palette.blueTint,
                       title: 'Levels',
                       detailIcon: const Icon(
                         Icons.star_rounded,
@@ -166,7 +167,8 @@ class HomeScreen extends StatelessWidget {
                   Expanded(
                     child: _MenuCard(
                       icon: Icons.calendar_today_outlined,
-                      color: Palette.right,
+                      color: Palette.alert,
+                      tint: Palette.orangeTint,
                       title: 'Daily puzzle',
                       detailIcon: const Icon(
                         Icons.local_fire_department_outlined,
@@ -197,6 +199,7 @@ class _MenuCard extends StatelessWidget {
   const _MenuCard({
     required this.icon,
     required this.color,
+    required this.tint,
     required this.title,
     required this.detailIcon,
     required this.detail,
@@ -205,6 +208,7 @@ class _MenuCard extends StatelessWidget {
 
   final IconData icon;
   final Color color;
+  final Color tint;
   final String title;
   final Widget detailIcon;
   final String detail;
@@ -227,7 +231,7 @@ class _MenuCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: Palette.tint(color),
+              color: tint,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 24),

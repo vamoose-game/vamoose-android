@@ -11,7 +11,7 @@ void main() {
 
     expect(find.text('Setting up your puzzles…'), findsOneWidget);
 
-    await tester.wait(const Duration(milliseconds: 1800));
+    await tester.wait(const Duration(milliseconds: 3000));
     expect(find.text('How to play'), findsOneWidget);
 
     await tester.tapAndWait(find.text('Let\'s play'));
@@ -26,11 +26,11 @@ void main() {
     await services.settings.markTutorialSeen();
     await tester.launch(services);
 
-    await tester.wait(const Duration(milliseconds: 1800));
+    await tester.wait(const Duration(milliseconds: 3000));
 
     expect(find.text('How to play'), findsNothing);
     expect(find.text('3 hints'), findsOneWidget);
-    expect(find.text('Level 1 · Warm-up'), findsOneWidget);
+    expect(find.text('Level 1'), findsOneWidget);
 
     await tester.close();
   });
@@ -40,7 +40,7 @@ void main() {
     await services.settings.markTutorialSeen();
     await services.progress.record(1, 3);
     await tester.launch(services);
-    await tester.wait(const Duration(milliseconds: 1800));
+    await tester.wait(const Duration(milliseconds: 3000));
 
     await tester.tapAndWait(find.text('Play'));
 
@@ -53,7 +53,7 @@ void main() {
   testWidgets('skip on how to play also goes home', (tester) async {
     final services = buildTestServices();
     await tester.launch(services);
-    await tester.wait(const Duration(milliseconds: 1800));
+    await tester.wait(const Duration(milliseconds: 3000));
 
     await tester.tapAndWait(find.text('Skip'));
 

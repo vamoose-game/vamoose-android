@@ -160,7 +160,7 @@ class _SlideIllustration extends StatelessWidget {
         const SizedBox(
           width: 46,
           height: 42,
-          child: BlockFace(direction: Direction.right, look: BlockLook.normal),
+          child: BlockFace(direction: Direction.right),
         ),
         for (var index = 0; index < 3; index++)
           Container(
@@ -194,7 +194,11 @@ class _BumpIllustration extends StatelessWidget {
         SizedBox(
           width: 44,
           height: 44,
-          child: BlockFace(direction: Direction.up, look: BlockLook.inTheWay),
+          child: BlockFace(
+            direction: Direction.up,
+            ringColor: Palette.ink,
+            ringWidth: 4,
+          ),
         ),
       ],
     );

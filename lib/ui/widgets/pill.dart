@@ -4,35 +4,27 @@ import '../theme/app_text.dart';
 import '../theme/palette.dart';
 
 class Pill extends StatelessWidget {
-  const Pill({
-    super.key,
-    required this.icon,
-    required this.text,
-    this.color = Palette.white,
-  });
+  const Pill({super.key, required this.icon, required this.text});
 
   final Widget icon;
   final String text;
-  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
+    return Container(
+      height: 44,
+      padding: const EdgeInsets.fromLTRB(12, 0, 16, 0),
       decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: const [BoxShadow(color: Palette.edge, offset: Offset(0, 3))],
+        color: Palette.white,
+        borderRadius: BorderRadius.circular(22),
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            icon,
-            const SizedBox(width: 8),
-            Text(text, style: AppText.bodyStrong),
-          ],
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          icon,
+          const SizedBox(width: 8),
+          Text(text, style: AppText.bodyStrong),
+        ],
       ),
     );
   }

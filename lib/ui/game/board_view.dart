@@ -10,6 +10,8 @@ import '../theme/motion.dart';
 import '../theme/palette.dart';
 import '../widgets/block_face.dart';
 
+enum BlockLook { normal, faded, hinted, inTheWay }
+
 class BoardView extends StatefulWidget {
   const BoardView({
     super.key,
@@ -280,8 +282,13 @@ class _PlayableBlockState extends State<_PlayableBlock>
           },
           child: BlockFace(
             direction: direction,
-            look: widget.look,
-            pressed: _pressed,
+            faded: widget.look == BlockLook.faded,
+            ringColor: switch (widget.look) {
+              BlockLook.hinted => Palette.sun,
+              BlockLook.inTheWay => Palette.ink,
+              _ => null,
+            },
+            ringWidth: widget.look == BlockLook.hinted ? 4 : 5,
           ),
         ),
       ),

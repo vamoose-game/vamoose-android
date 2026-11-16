@@ -33,9 +33,7 @@ class MiniBoard extends StatelessWidget {
                       (block.isVertical ? block.length : 1) * cell - gap * 2,
                   child: BlockFace(
                     direction: block.direction,
-                    look: fadedIds.contains(block.id)
-                        ? BlockLook.faded
-                        : BlockLook.normal,
+                    faded: fadedIds.contains(block.id),
                   ),
                 ),
             ],

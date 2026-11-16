@@ -18,11 +18,11 @@ class PageHeader extends StatelessWidget {
           semanticLabel: 'Back',
           onPressed: () => Navigator.of(context).maybePop(),
         ),
-        const SizedBox(width: 14),
+        const SizedBox(width: 12),
         Expanded(
           child: Text(
             title,
-            style: AppText.title,
+            style: AppText.pageTitle,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

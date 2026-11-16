@@ -5,25 +5,48 @@ import '../theme/motion.dart';
 import '../theme/palette.dart';
 
 enum KeyTone {
-  primary(face: Palette.ink, edge: Color(0xFF0B1028), content: Palette.white),
-  secondary(face: Palette.white, edge: Palette.edge, content: Palette.ink),
-  hint(face: Palette.sun, edge: Color(0xFFE0A21F), content: Palette.ink),
-  success(face: Palette.down, edge: Color(0xFF0A7A6A), content: Palette.white),
-  soft(face: Palette.mist, edge: Palette.edge, content: Palette.ink),
-  reward(
-    face: Color(0xFFFFF3D6),
-    edge: Color(0xFFF5DA9A),
+  primary(
+    face: Palette.ink,
+    edge: Color(0xFF11172A),
+    depth: 5,
+    content: Palette.white,
+  ),
+  secondary(
+    face: Palette.white,
+    edge: Palette.edge,
+    depth: 4,
     content: Palette.ink,
+  ),
+  hint(
+    face: Palette.sun,
+    edge: Palette.sunEdge,
+    depth: 4,
+    content: Palette.ink,
+  ),
+  soft(face: Palette.well, edge: Palette.edge, depth: 4, content: Palette.ink),
+  reward(
+    face: Palette.cream,
+    edge: Palette.creamEdge,
+    depth: 4,
+    content: Palette.ink,
+  ),
+  success(
+    face: Palette.down,
+    edge: Color(0xFF0B7F6E),
+    depth: 6,
+    content: Palette.white,
   );
 
   const KeyTone({
     required this.face,
     required this.edge,
+    required this.depth,
     required this.content,
   });
 
   final Color face;
   final Color edge;
+  final double depth;
   final Color content;
 }
 
@@ -66,7 +89,6 @@ class _KeyButtonState extends State<KeyButton> {
   Widget build(BuildContext context) {
     final tone = widget.tone;
     final radius = BorderRadius.circular(widget.radius);
-    final travel = _pressed ? Motion.keyTravel : 0.0;
     return Semantics(
       button: true,
       enabled: widget.onPressed != null,
@@ -79,23 +101,14 @@ class _KeyButtonState extends State<KeyButton> {
         onTap: widget.onPressed,
         child: SizedBox(
           height: widget.height,
-          child: Stack(
-            children: [
-              Positioned.fill(
-                top: Motion.keyTravel,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: tone.edge,
-                    borderRadius: radius,
-                  ),
-                ),
-              ),
-              AnimatedPadding(
+          child: AnimatedSlide(
+            duration: Motion.keyPress,
+            offset: Offset(0, _pressed ? Motion.keyTravel / widget.height : 0),
+            child: DecoratedBox(
+              decoration: BoxDecoration(color: tone.edge, borderRadius: radius),
+              child: AnimatedPadding(
                 duration: Motion.keyPress,
-                padding: EdgeInsets.only(
-                  top: travel,
-                  bottom: Motion.keyTravel - travel,
-                ),
+                padding: EdgeInsets.only(bottom: _pressed ? 0 : tone.depth),
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     color: tone.face,
@@ -116,7 +129,7 @@ class _KeyButtonState extends State<KeyButton> {
                   ),
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -130,7 +143,7 @@ class IconKey extends StatelessWidget {
     required this.icon,
     required this.onPressed,
     required this.semanticLabel,
-    this.size = 52,
+    this.size = 48,
   });
 
   final IconData icon;

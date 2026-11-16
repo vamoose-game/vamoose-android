@@ -37,7 +37,7 @@ There are no timers and no lives. Every level can be solved, so you can never ge
 | --- | --- |
 | App icon, 512 × 512 | `store/icon_512.png` |
 | Feature graphic, 1024 × 500 | `store/feature_graphic.png` |
-| Phone screenshots, 1080 × 1920 | `store/screenshots/01_game.png` to `07_how_to_play.png` |
+| Phone screenshots, 1080 × 2160, in this order | `store/screenshots/01_splash.png` to `08_pause.png` |
 
 ## First release notes
 

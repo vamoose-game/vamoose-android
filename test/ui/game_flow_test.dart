@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:vamoose/app/app_services.dart';
 import 'package:vamoose/domain/board.dart';
+import 'package:vamoose/services/sound_effects.dart';
 import 'package:vamoose/ui/game/game_mode.dart';
 import 'package:vamoose/ui/screens/game_screen.dart';
 
@@ -153,6 +154,34 @@ void main() {
     expect(find.text('Board clear!'), findsOneWidget);
     expect(services.daily.isTodayCompleted, isTrue);
     expect(services.hints.count, 4);
+
+    await tester.close();
+  });
+
+  testWidgets('keys tick and leaving blocks climb the scale', (tester) async {
+    final sounds = RecordingSounds();
+    services = buildTestServices(sounds: sounds);
+    final board = services.levels.byNumber(1).board;
+    await tester.launch(
+      services,
+      home: const GameScreen(mode: CampaignMode(1)),
+    );
+
+    final order = solutionOrder(board);
+    for (final id in order) {
+      await tester.tapAndWait(blockFinder(id));
+    }
+    expect(
+      sounds.played
+          .where((played) => played.$1 == Sound.leave)
+          .map((played) => played.$2),
+      [for (var index = 0; index < order.length; index++) index],
+    );
+
+    await tester.wait(const Duration(milliseconds: 1400));
+    sounds.played.clear();
+    await tester.tapAndWait(find.text('See results'));
+    expect(sounds.played.first, (Sound.tap, 0));
 
     await tester.close();
   });

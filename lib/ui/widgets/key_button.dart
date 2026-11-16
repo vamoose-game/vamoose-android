@@ -1,5 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
+import 'key_press_sound.dart';
+
 import '../theme/app_text.dart';
 import '../theme/motion.dart';
 import '../theme/palette.dart';
@@ -85,6 +87,11 @@ class _KeyButtonState extends State<KeyButton> {
     }
   }
 
+  void _press() {
+    KeyPressSound.maybeOf(context)?.call();
+    widget.onPressed?.call();
+  }
+
   @override
   Widget build(BuildContext context) {
     final tone = widget.tone;
@@ -98,7 +105,7 @@ class _KeyButtonState extends State<KeyButton> {
         onTapDown: (_) => _setPressed(true),
         onTapUp: (_) => _setPressed(false),
         onTapCancel: () => _setPressed(false),
-        onTap: widget.onPressed,
+        onTap: widget.onPressed == null ? null : _press,
         child: SizedBox(
           height: widget.height,
           child: AnimatedSlide(

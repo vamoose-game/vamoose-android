@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../state/settings_controller.dart';
 import '../ui/screens/splash_screen.dart';
 import '../ui/theme/app_theme.dart';
+import '../ui/widgets/key_press_sound.dart';
 import 'app_info.dart';
 import 'app_services.dart';
 
@@ -36,10 +37,13 @@ class VamooseApp extends StatelessWidget {
           final scale = context.select<SettingsController, double>(
             (settings) => settings.textScale,
           );
-          return MediaQuery(
-            data: MediaQuery.of(context)
-                .copyWith(textScaler: TextScaler.linear(scale)),
-            child: child!,
+          return KeyPressSound(
+            onPress: services.feedback.keyPressed,
+            child: MediaQuery(
+              data: MediaQuery.of(context)
+                  .copyWith(textScaler: TextScaler.linear(scale)),
+              child: child!,
+            ),
           );
         },
         home: home,

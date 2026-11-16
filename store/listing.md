@@ -27,7 +27,7 @@ There are no timers and no lives. Every level can be solved, so you can never ge
 • A new daily puzzle every day, with streaks
 • Hints show you a block that can go, plus one free hint every day
 • Calm background music and gentle sound effects
-• Bigger text, sound, music and vibration you can switch on or off
+• Sound, music and vibration you can switch on or off
 • Plays offline, no account needed
 • Remove ads with a one-time purchase
 

@@ -10,14 +10,12 @@ class BlockFace extends StatelessWidget {
   const BlockFace({
     super.key,
     required this.direction,
-    this.faded = false,
     this.ringColor,
     this.ringWidth = 0,
     this.arrowSize,
   });
 
   final Direction direction;
-  final bool faded;
   final Color? ringColor;
   final double ringWidth;
   final double? arrowSize;
@@ -29,28 +27,25 @@ class BlockFace extends StatelessWidget {
         final shortest = constraints.biggest.shortestSide;
         final radius = BorderRadius.circular(min(18, shortest * 0.27));
         final ring = ringColor;
-        return Opacity(
-          opacity: faded ? 0.35 : 1,
-          child: DecoratedBox(
-            position: DecorationPosition.foreground,
-            decoration: BoxDecoration(
-              borderRadius: radius,
-              border: ring == null || ringWidth <= 0
-                  ? null
-                  : Border.all(
-                      color: ring,
-                      width: ringWidth,
-                      strokeAlign: BorderSide.strokeAlignOutside,
-                    ),
-            ),
-            child: ShadedTile(
-              color: Palette.forDirection(direction),
-              radius: radius,
-              edge: (shortest * 0.1).clamp(3.0, 6.0),
-              child: ArrowGlyph(
-                direction: direction,
-                size: arrowSize ?? min(28, shortest * 0.52),
-              ),
+        return DecoratedBox(
+          position: DecorationPosition.foreground,
+          decoration: BoxDecoration(
+            borderRadius: radius,
+            border: ring == null || ringWidth <= 0
+                ? null
+                : Border.all(
+                    color: ring,
+                    width: ringWidth,
+                    strokeAlign: BorderSide.strokeAlignOutside,
+                  ),
+          ),
+          child: ShadedTile(
+            color: Palette.forDirection(direction),
+            radius: radius,
+            edge: (shortest * 0.1).clamp(3.0, 6.0),
+            child: ArrowGlyph(
+              direction: direction,
+              size: arrowSize ?? min(28, shortest * 0.52),
             ),
           ),
         );

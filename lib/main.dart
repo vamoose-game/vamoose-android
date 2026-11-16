@@ -7,5 +7,7 @@ import 'app/vamoose_app.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  runApp(VamooseApp(services: await AppServices.create()));
+  final services = await AppServices.create();
+  runApp(VamooseApp(services: services));
+  services.music.start();
 }

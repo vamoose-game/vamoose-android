@@ -9,7 +9,9 @@ import '../services/ads/ad_service.dart';
 import '../services/ads/ad_units.dart';
 import '../services/ads/admob_ad_service.dart';
 import '../services/ads/interstitial_policy.dart';
+import '../services/audio_player_music.dart';
 import '../services/audio_player_sound_effects.dart';
+import '../services/background_music.dart';
 import '../services/game_feedback.dart';
 import '../services/haptics.dart';
 import '../services/link_opener.dart';
@@ -36,6 +38,7 @@ class AppServices {
     required this.purchases,
     required this.interstitials,
     required this.links,
+    required this.music,
   });
 
   final LevelCatalog levels;
@@ -50,6 +53,7 @@ class AppServices {
   final PurchaseService purchases;
   final InterstitialPolicy interstitials;
   final LinkOpener links;
+  final BackgroundMusic music;
 
   static Future<AppServices> create() async {
     const clock = SystemClock();
@@ -76,6 +80,7 @@ class AppServices {
       purchases: PlayPurchaseService(PlayBillingGateway(), adFree),
       interstitials: InterstitialPolicy(clock, adFree),
       links: const ExternalLinkOpener(),
+      music: BackgroundMusic(AudioPlayerMusic(), settings),
     );
   }
 }

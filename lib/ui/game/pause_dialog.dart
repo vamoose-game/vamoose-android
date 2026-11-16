@@ -205,6 +205,17 @@ class _PauseCard extends StatelessWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: _ToggleKey(
+                          icon: settings.music
+                              ? Icons.music_note_rounded
+                              : Icons.music_off_rounded,
+                          text: settings.music ? 'Music on' : 'Music off',
+                          on: settings.music,
+                          onPressed: () => settings.setMusic(!settings.music),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _ToggleKey(
                           icon: Icons.vibration_rounded,
                           text: settings.vibration
                               ? 'Vibration on'
@@ -287,11 +298,13 @@ class _ToggleKey extends StatelessWidget {
         children: [
           Icon(icon, size: 24, color: color),
           const SizedBox(height: 6),
-          Text(
-            text,
-            style: AppText.bodyStrong.copyWith(fontSize: 15, color: color),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              text,
+              style: AppText.bodyStrong.copyWith(fontSize: 14, color: color),
+              maxLines: 1,
+            ),
           ),
         ],
       ),

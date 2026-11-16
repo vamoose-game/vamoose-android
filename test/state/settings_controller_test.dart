@@ -9,6 +9,7 @@ void main() {
 
     expect(settings.biggerText, isFalse);
     expect(settings.sound, isTrue);
+    expect(settings.music, isTrue);
     expect(settings.vibration, isTrue);
     expect(settings.tutorialSeen, isFalse);
     expect(settings.textScale, 1);
@@ -28,13 +29,15 @@ void main() {
     var notified = 0;
     settings.addListener(() => notified++);
     await settings.setSound(false);
+    await settings.setMusic(false);
     await settings.setVibration(false);
     await settings.markTutorialSeen();
 
     final reloaded = SettingsController(store);
     expect(reloaded.sound, isFalse);
+    expect(reloaded.music, isFalse);
     expect(reloaded.vibration, isFalse);
     expect(reloaded.tutorialSeen, isTrue);
-    expect(notified, 3);
+    expect(notified, 4);
   });
 }

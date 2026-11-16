@@ -111,6 +111,11 @@ class SettingsScreen extends StatelessWidget {
                   onChanged: settings.setSound,
                 ),
                 _SwitchRow(
+                  title: 'Music',
+                  value: settings.music,
+                  onChanged: settings.setMusic,
+                ),
+                _SwitchRow(
                   title: 'Vibration',
                   value: settings.vibration,
                   onChanged: settings.setVibration,

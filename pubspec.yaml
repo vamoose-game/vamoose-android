@@ -30,6 +30,7 @@ flutter:
   assets:
     - assets/levels/
     - assets/sounds/
+    - assets/music/
   fonts:
     - family: Lexend
       fonts:

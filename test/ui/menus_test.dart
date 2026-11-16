@@ -33,6 +33,9 @@ void main() {
 
     expect(services.settings.biggerText, isTrue);
     expect(services.settings.vibration, isFalse);
+
+    await tester.tapAndWait(find.text('Music'));
+    expect(services.settings.music, isFalse);
     expect(find.text('Easy mode'), findsNothing);
 
     await tester.scrollUntilVisible(find.text('Version 1.0.0'), 200);

@@ -28,11 +28,12 @@ void main() {
     final services = buildTestServices();
     await tester.launch(services, home: const SettingsScreen());
 
-    await tester.tapAndWait(find.text('Easy mode'));
     await tester.tapAndWait(find.text('Bigger text'));
+    await tester.tapAndWait(find.text('Vibration'));
 
-    expect(services.settings.easyMode, isTrue);
     expect(services.settings.biggerText, isTrue);
+    expect(services.settings.vibration, isFalse);
+    expect(find.text('Easy mode'), findsNothing);
 
     await tester.scrollUntilVisible(find.text('Version 1.0.0'), 200);
     expect(find.text('Version 1.0.0'), findsOneWidget);

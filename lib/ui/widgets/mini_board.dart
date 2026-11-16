@@ -4,16 +4,10 @@ import '../../domain/board.dart';
 import 'block_face.dart';
 
 class MiniBoard extends StatelessWidget {
-  const MiniBoard({
-    super.key,
-    required this.board,
-    this.gap = 3,
-    this.fadedIds = const {},
-  });
+  const MiniBoard({super.key, required this.board, this.gap = 3});
 
   final Board board;
   final double gap;
-  final Set<int> fadedIds;
 
   @override
   Widget build(BuildContext context) {
@@ -31,10 +25,7 @@ class MiniBoard extends StatelessWidget {
                   width: (block.isVertical ? 1 : block.length) * cell - gap * 2,
                   height:
                       (block.isVertical ? block.length : 1) * cell - gap * 2,
-                  child: BlockFace(
-                    direction: block.direction,
-                    faded: fadedIds.contains(block.id),
-                  ),
+                  child: BlockFace(direction: block.direction),
                 ),
             ],
           );

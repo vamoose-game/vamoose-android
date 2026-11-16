@@ -9,15 +9,9 @@ import '../theme/palette.dart';
 import '../widgets/block_face.dart';
 
 class BoardView extends StatefulWidget {
-  const BoardView({
-    super.key,
-    required this.session,
-    required this.easyMode,
-    required this.onOutcome,
-  });
+  const BoardView({super.key, required this.session, required this.onOutcome});
 
   final GameSession session;
-  final bool easyMode;
   final ValueChanged<TapOutcome> onOutcome;
 
   @override
@@ -85,7 +79,6 @@ class _BoardViewState extends State<BoardView> {
                   _PlayableBlock(
                     key: ValueKey('block-${block.id}'),
                     block: block,
-                    faded: widget.easyMode && !board.canLeave(block),
                     hinted: block.id == hinted,
                     bumpCount: _bumps[block.id] ?? 0,
                     hitCount: _hits[block.id] ?? 0,
@@ -131,7 +124,6 @@ class _PlayableBlock extends StatefulWidget {
   const _PlayableBlock({
     super.key,
     required this.block,
-    required this.faded,
     required this.hinted,
     required this.bumpCount,
     required this.hitCount,
@@ -139,7 +131,6 @@ class _PlayableBlock extends StatefulWidget {
   });
 
   final Block block;
-  final bool faded;
   final bool hinted;
   final int bumpCount;
   final int hitCount;
@@ -243,7 +234,6 @@ class _PlayableBlockState extends State<_PlayableBlock>
                 scale: scale,
                 child: BlockFace(
                   direction: direction,
-                  faded: widget.faded && !widget.hinted && !hitting,
                   ringColor: hitting
                       ? Palette.ink
                       : (widget.hinted ? Palette.sun : null),

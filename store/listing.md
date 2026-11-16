@@ -26,7 +26,6 @@ There are no timers and no lives. Every level can be solved, so you can never ge
 • Boards grow from 5×5 to 8×8 as you play
 • A new daily puzzle every day, with streaks
 • Hints show you a block that can go, plus one free hint every day
-• Easy mode fades the blocks that cannot move yet
 • Bigger text, sound effects and vibration you can switch on or off
 • Plays offline, no account needed
 • Remove ads with a one-time purchase

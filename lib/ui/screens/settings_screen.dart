@@ -101,12 +101,6 @@ class SettingsScreen extends StatelessWidget {
             _Group(
               children: [
                 _SwitchRow(
-                  title: 'Easy mode',
-                  subtitle: 'Blocks that cannot move yet are faded.',
-                  value: settings.easyMode,
-                  onChanged: settings.setEasyMode,
-                ),
-                _SwitchRow(
                   title: 'Bigger text',
                   value: settings.biggerText,
                   onChanged: settings.setBiggerText,
@@ -271,11 +265,9 @@ class _SwitchRow extends StatelessWidget {
     required this.title,
     required this.value,
     required this.onChanged,
-    this.subtitle,
   });
 
   final String title;
-  final String? subtitle;
   final bool value;
   final ValueChanged<bool> onChanged;
 
@@ -298,16 +290,6 @@ class _SwitchRow extends StatelessWidget {
                         title,
                         style: AppText.bodyStrong.copyWith(fontSize: 17),
                       ),
-                      if (subtitle != null) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          subtitle!,
-                          style: AppText.body.copyWith(
-                            fontSize: 15,
-                            height: 1.35,
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),

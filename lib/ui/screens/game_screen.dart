@@ -9,7 +9,6 @@ import '../../state/daily_controller.dart';
 import '../../state/game_session.dart';
 import '../../state/hint_wallet.dart';
 import '../../state/progress_controller.dart';
-import '../../state/settings_controller.dart';
 import '../formatting.dart';
 import '../game/board_clear_overlay.dart';
 import '../game/board_view.dart';
@@ -165,9 +164,6 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final easyMode = context.select<SettingsController, bool>(
-      (settings) => settings.easyMode,
-    );
     final hints = context.select<HintWallet, int>((wallet) => wallet.count);
     return Scaffold(
       body: SafeArea(
@@ -194,7 +190,6 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                             BoardView(
                               key: ValueKey(_round),
                               session: _session,
-                              easyMode: easyMode,
                               onOutcome: _onOutcome,
                             ),
                             if (_result != null)

@@ -11,7 +11,7 @@ Android · Flutter · no backend · version 1.0.0
 - Stars: no bumps = 3, 1–2 bumps = 2, 3 or more = 1
 - 3 starting hints, 1 free hint every day, +1 hint for each daily puzzle
 - Daily puzzle with streaks
-- Settings: bigger text, sound effects, vibration
+- Settings: bigger text, sound effects, music, vibration
 - AdMob ads with Google consent (UMP) and a one-time Remove ads purchase
 
 ## Run
@@ -84,6 +84,7 @@ flutter build appbundle
 ```bash
 dart run tool/generate_levels.dart
 python3 tool/generate_sounds.py
+python3 tool/generate_music.py
 python3 tool/generate_icons.py
 dart run flutter_launcher_icons
 dart run flutter_native_splash:create

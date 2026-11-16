@@ -101,11 +101,6 @@ class SettingsScreen extends StatelessWidget {
             _Group(
               children: [
                 _SwitchRow(
-                  title: 'Bigger text',
-                  value: settings.biggerText,
-                  onChanged: settings.setBiggerText,
-                ),
-                _SwitchRow(
                   title: 'Sound effects',
                   value: settings.sound,
                   onChanged: settings.setSound,

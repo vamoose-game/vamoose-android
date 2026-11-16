@@ -7,20 +7,10 @@ void main() {
   test('defaults match the design', () {
     final settings = SettingsController(MemoryStore());
 
-    expect(settings.biggerText, isFalse);
     expect(settings.sound, isTrue);
     expect(settings.music, isTrue);
     expect(settings.vibration, isTrue);
     expect(settings.tutorialSeen, isFalse);
-    expect(settings.textScale, 1);
-  });
-
-  test('bigger text scales by 1.2', () async {
-    final settings = SettingsController(MemoryStore());
-
-    await settings.setBiggerText(true);
-
-    expect(settings.textScale, 1.2);
   });
 
   test('changes persist and notify', () async {

@@ -61,4 +61,18 @@ void main() {
 
     await tester.close();
   });
+
+  testWidgets('follows the phone text size up to 1.2', (tester) async {
+    final services = buildTestServices();
+    await services.settings.markTutorialSeen();
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await tester.launch(services);
+
+    final scaler = MediaQuery.of(tester.element(find.byType(Scaffold).first))
+        .textScaler;
+    expect(scaler.scale(10), 12);
+
+    await tester.close();
+  });
 }

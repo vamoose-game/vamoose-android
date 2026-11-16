@@ -59,7 +59,7 @@ void main() {
     music.start();
 
     await settings.setVibration(false);
-    await settings.setBiggerText(true);
+    await settings.setSound(false);
 
     expect(player.calls, ['play']);
   });

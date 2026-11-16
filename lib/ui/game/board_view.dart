@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:material_ui/material_ui.dart';
 
 import '../../domain/block.dart';
@@ -9,8 +7,6 @@ import '../../state/game_session.dart';
 import '../theme/motion.dart';
 import '../theme/palette.dart';
 import '../widgets/block_face.dart';
-
-enum BlockLook { normal, faded, hinted, inTheWay }
 
 class BoardView extends StatefulWidget {
   const BoardView({
@@ -33,14 +29,7 @@ class _BoardViewState extends State<BoardView> {
 
   final List<_Leaving> _leaving = [];
   final Map<int, int> _bumps = {};
-  int? _inTheWayId;
-  Timer? _inTheWayTimer;
-
-  @override
-  void dispose() {
-    _inTheWayTimer?.cancel();
-    super.dispose();
-  }
+  final Map<int, int> _hits = {};
 
   void _tap(Block block) {
     final outcome = widget.session.tap(block.id);
@@ -50,32 +39,10 @@ class _BoardViewState extends State<BoardView> {
           _leaving.add(_Leaving(block, travel));
         case BlockBumps(:final blocker):
           _bumps[block.id] = (_bumps[block.id] ?? 0) + 1;
-          _inTheWayId = blocker.id;
-          _inTheWayTimer?.cancel();
-          _inTheWayTimer = Timer(Motion.inTheWay, _clearInTheWay);
+          _hits[blocker.id] = (_hits[blocker.id] ?? 0) + 1;
       }
     });
     widget.onOutcome(outcome);
-  }
-
-  void _clearInTheWay() {
-    if (mounted) {
-      setState(() => _inTheWayId = null);
-    }
-  }
-
-  BlockLook _lookOf(Block block) {
-    final session = widget.session;
-    if (block.id == _inTheWayId) {
-      return BlockLook.inTheWay;
-    }
-    if (block.id == session.hintedBlockId) {
-      return BlockLook.hinted;
-    }
-    if (widget.easyMode && !session.board.canLeave(block)) {
-      return BlockLook.faded;
-    }
-    return BlockLook.normal;
   }
 
   @override
@@ -84,9 +51,10 @@ class _BoardViewState extends State<BoardView> {
       aspectRatio: 1,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final board = widget.session.board;
+          final session = widget.session;
+          final board = session.board;
           final cell = constraints.maxWidth / board.size;
-          final hinted = widget.session.hintedBlockId;
+          final hinted = session.hintedBlockId;
           return Stack(
             clipBehavior: Clip.none,
             children: [
@@ -105,7 +73,11 @@ class _BoardViewState extends State<BoardView> {
                     ),
                   ),
               if (hinted != null && board.contains(hinted))
-                ..._hintTrail(board.blockById(hinted), board.size, cell),
+                _HintDots(
+                  key: ValueKey('hint-$hinted'),
+                  path: board.blockById(hinted).pathWithin(board.size),
+                  cell: cell,
+                ),
               for (final block in board.blocks)
                 _place(
                   block,
@@ -113,8 +85,10 @@ class _BoardViewState extends State<BoardView> {
                   _PlayableBlock(
                     key: ValueKey('block-${block.id}'),
                     block: block,
-                    look: _lookOf(block),
+                    faded: widget.easyMode && !board.canLeave(block),
+                    hinted: block.id == hinted,
                     bumpCount: _bumps[block.id] ?? 0,
+                    hitCount: _hits[block.id] ?? 0,
                     onTap: () => _tap(block),
                   ),
                 ),
@@ -144,19 +118,6 @@ class _BoardViewState extends State<BoardView> {
     height: (block.isVertical ? block.length : 1) * cell - _gap * 2,
     child: child,
   );
-
-  List<Widget> _hintTrail(Block block, int size, double cell) {
-    final path = block.pathWithin(size);
-    return [
-      for (var index = 0; index < path.length; index++)
-        _HintDot(
-          key: ValueKey('hint-$index'),
-          cell: path[index],
-          cellSize: cell,
-          index: index,
-        ),
-    ];
-  }
 }
 
 class _Leaving {
@@ -170,14 +131,18 @@ class _PlayableBlock extends StatefulWidget {
   const _PlayableBlock({
     super.key,
     required this.block,
-    required this.look,
+    required this.faded,
+    required this.hinted,
     required this.bumpCount,
+    required this.hitCount,
     required this.onTap,
   });
 
   final Block block;
-  final BlockLook look;
+  final bool faded;
+  final bool hinted;
   final int bumpCount;
+  final int hitCount;
   final VoidCallback onTap;
 
   @override
@@ -186,32 +151,31 @@ class _PlayableBlock extends StatefulWidget {
 
 class _PlayableBlockState extends State<_PlayableBlock>
     with TickerProviderStateMixin {
-  static final Animatable<double> _bumpCurve = TweenSequence([
-    TweenSequenceItem(
-      tween: Tween(
-        begin: 0.0,
-        end: 1.0,
-      ).chain(CurveTween(curve: Curves.easeOut)),
-      weight: 35,
-    ),
-    TweenSequenceItem(
-      tween: Tween(
-        begin: 1.0,
-        end: 0.0,
-      ).chain(CurveTween(curve: Curves.easeInOut)),
-      weight: 65,
-    ),
+  static final Animatable<double> _bumpPath = TweenSequence([
+    TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 35),
+    TweenSequenceItem(tween: Tween(begin: 1.0, end: -0.4), weight: 25),
+    TweenSequenceItem(tween: Tween(begin: -0.4, end: 0.2), weight: 20),
+    TweenSequenceItem(tween: Tween(begin: 0.2, end: 0.0), weight: 20),
+  ]);
+
+  static final Animatable<double> _ringPath = TweenSequence([
+    TweenSequenceItem(tween: Tween(begin: 0.0, end: 5.0), weight: 25),
+    TweenSequenceItem(tween: ConstantTween(5.0), weight: 45),
+    TweenSequenceItem(tween: Tween(begin: 5.0, end: 0.0), weight: 30),
   ]);
 
   late final AnimationController _bump = AnimationController(
     vsync: this,
     duration: Motion.bump,
   );
+  late final AnimationController _hit = AnimationController(
+    vsync: this,
+    duration: Motion.inTheWay,
+  );
   late final AnimationController _pulse = AnimationController(
     vsync: this,
     duration: Motion.hintPulse,
   );
-  bool _pressed = false;
 
   @override
   void initState() {
@@ -225,13 +189,16 @@ class _PlayableBlockState extends State<_PlayableBlock>
     if (widget.bumpCount != oldWidget.bumpCount) {
       _bump.forward(from: 0);
     }
+    if (widget.hitCount != oldWidget.hitCount) {
+      _hit.forward(from: 0);
+    }
     _syncPulse();
   }
 
   void _syncPulse() {
-    if (widget.look == BlockLook.hinted && !_pulse.isAnimating) {
+    if (widget.hinted && !_pulse.isAnimating) {
       _pulse.repeat(reverse: true);
-    } else if (widget.look != BlockLook.hinted && _pulse.isAnimating) {
+    } else if (!widget.hinted && _pulse.isAnimating) {
       _pulse
         ..stop()
         ..value = 0;
@@ -241,14 +208,9 @@ class _PlayableBlockState extends State<_PlayableBlock>
   @override
   void dispose() {
     _bump.dispose();
+    _hit.dispose();
     _pulse.dispose();
     super.dispose();
-  }
-
-  void _setPressed(bool value) {
-    if (_pressed != value) {
-      setState(() => _pressed = value);
-    }
   }
 
   @override
@@ -256,40 +218,44 @@ class _PlayableBlockState extends State<_PlayableBlock>
     final direction = widget.block.direction;
     return Semantics(
       button: true,
-      label: '${direction.name} block',
+      label:
+          '${direction.name} block${widget.hinted ? ', hint: this one can go' : ''}',
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTapDown: (_) => _setPressed(true),
-        onTapUp: (_) => _setPressed(false),
-        onTapCancel: () => _setPressed(false),
         onTap: widget.onTap,
         child: AnimatedBuilder(
-          animation: Listenable.merge([_bump, _pulse]),
-          builder: (context, child) {
+          animation: Listenable.merge([_bump, _hit, _pulse]),
+          builder: (context, _) {
             final nudge =
-                _bumpCurve.transform(_bump.value) * Motion.bumpDistance;
+                _bumpPath.transform(Curves.easeOut.transform(_bump.value)) *
+                Motion.bumpDistance;
             final scale =
                 1 +
                 (Motion.hintScale - 1) *
                     Curves.easeInOut.transform(_pulse.value);
+            final hitting = _hit.isAnimating;
             return Transform.translate(
               offset: Offset(
                 direction.columnStep * nudge,
                 direction.rowStep * nudge,
               ),
-              child: Transform.scale(scale: scale, child: child),
+              child: Transform.scale(
+                scale: scale,
+                child: BlockFace(
+                  direction: direction,
+                  faded: widget.faded && !widget.hinted && !hitting,
+                  ringColor: hitting
+                      ? Palette.ink
+                      : (widget.hinted ? Palette.sun : null),
+                  ringWidth: hitting
+                      ? _ringPath.transform(
+                          Curves.easeOut.transform(_hit.value),
+                        )
+                      : 4,
+                ),
+              ),
             );
           },
-          child: BlockFace(
-            direction: direction,
-            faded: widget.look == BlockLook.faded,
-            ringColor: switch (widget.look) {
-              BlockLook.hinted => Palette.sun,
-              BlockLook.inTheWay => Palette.ink,
-              _ => null,
-            },
-            ringWidth: widget.look == BlockLook.hinted ? 4 : 5,
-          ),
         ),
       ),
     );
@@ -317,6 +283,7 @@ class _LeavingBlockState extends State<_LeavingBlock>
   static final Curve _fade = Interval(
     Motion.blockFadeDelay.inMilliseconds / Motion.blockLeaves.inMilliseconds,
     1,
+    curve: Curves.easeIn,
   );
 
   late final AnimationController _controller = AnimationController(
@@ -366,31 +333,22 @@ class _LeavingBlockState extends State<_LeavingBlock>
   }
 }
 
-class _HintDot extends StatefulWidget {
-  const _HintDot({
-    super.key,
-    required this.cell,
-    required this.cellSize,
-    required this.index,
-  });
+class _HintDots extends StatefulWidget {
+  const _HintDots({super.key, required this.path, required this.cell});
 
-  static const Duration step = Duration(milliseconds: 90);
-  static const Duration cycle = Duration(milliseconds: 1400);
-
-  final Cell cell;
-  final double cellSize;
-  final int index;
+  final List<Cell> path;
+  final double cell;
 
   @override
-  State<_HintDot> createState() => _HintDotState();
+  State<_HintDots> createState() => _HintDotsState();
 }
 
-class _HintDotState extends State<_HintDot>
+class _HintDotsState extends State<_HintDots>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: _HintDot.cycle,
-  )..repeat();
+    duration: Motion.hintDot + Motion.hintDotGap * widget.path.length,
+  )..forward();
 
   @override
   void dispose() {
@@ -400,32 +358,38 @@ class _HintDotState extends State<_HintDot>
 
   @override
   Widget build(BuildContext context) {
-    final dot = widget.cellSize * 0.16;
-    final start =
-        widget.index *
-        _HintDot.step.inMilliseconds /
-        _HintDot.cycle.inMilliseconds;
-    return Positioned(
-      left: (widget.cell.column + 0.5) * widget.cellSize - dot / 2,
-      top: (widget.cell.row + 0.5) * widget.cellSize - dot / 2,
-      width: dot,
-      height: dot,
-      child: FadeTransition(
-        opacity: _controller.drive(
-          TweenSequence([
-            TweenSequenceItem(
-              tween: ConstantTween(0.0),
-              weight: start.clamp(0.0, 0.7) * 100 + 0.01,
+    final dot = widget.cell * 12 / 56;
+    final total = _controller.duration!.inMilliseconds;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        for (var index = 0; index < widget.path.length; index++)
+          Positioned(
+            left: (widget.path[index].column + 0.5) * widget.cell - dot / 2,
+            top: (widget.path[index].row + 0.5) * widget.cell - dot / 2,
+            width: dot,
+            height: dot,
+            child: ScaleTransition(
+              scale: CurvedAnimation(
+                parent: _controller,
+                curve: Interval(
+                  index * Motion.hintDotGap.inMilliseconds / total,
+                  (index * Motion.hintDotGap.inMilliseconds +
+                          Motion.hintDot.inMilliseconds) /
+                      total,
+                  curve: Curves.easeOut,
+                ),
+              ),
+              child: const DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Palette.sun,
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(color: Palette.cream, spreadRadius: 3)],
+                ),
+              ),
             ),
-            TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 15),
-            TweenSequenceItem(tween: ConstantTween(1.0), weight: 30),
-            TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 15),
-          ]),
-        ),
-        child: const DecoratedBox(
-          decoration: BoxDecoration(color: Palette.sun, shape: BoxShape.circle),
-        ),
-      ),
+          ),
+      ],
     );
   }
 }

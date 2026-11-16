@@ -15,6 +15,8 @@ import '../theme/app_text.dart';
 import '../theme/motion.dart';
 import '../theme/palette.dart';
 import '../widgets/confetti.dart';
+import '../widgets/entrance.dart';
+import '../widgets/glyphs.dart';
 import '../widgets/key_button.dart';
 import '../widgets/surface_card.dart';
 import '../widgets/toast.dart';
@@ -30,11 +32,10 @@ class LevelCompleteScreen extends StatefulWidget {
 
 class _LevelCompleteScreenState extends State<LevelCompleteScreen>
     with TickerProviderStateMixin {
+  static const Duration _firstStar = Duration(milliseconds: 500);
+  static const Offset _rise = Offset(0, 16);
+
   late final AppServices _services = context.read<AppServices>();
-  late final AnimationController _badge = AnimationController(
-    vsync: this,
-    duration: Motion.badge,
-  )..forward();
   late final List<AnimationController> _stars = [
     for (var index = 0; index < StarRating.max; index++)
       AnimationController(vsync: this, duration: Motion.starPop),
@@ -48,7 +49,7 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
     super.initState();
     for (var index = 0; index < _result.stars; index++) {
       _timers.add(
-        Timer(Motion.badge + Motion.starGap * index, () {
+        Timer(_firstStar + Motion.starGap * index, () {
           _stars[index].forward();
           _services.feedback.starEarned();
         }),
@@ -61,7 +62,6 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
     for (final timer in _timers) {
       timer.cancel();
     }
-    _badge.dispose();
     for (final star in _stars) {
       star.dispose();
     }
@@ -122,127 +122,154 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
     return Scaffold(
       body: Stack(
         children: [
-          const Positioned.fill(child: Confetti()),
+          Positioned.fill(
+            child: LayoutBuilder(
+              builder: (context, constraints) => Confetti(
+                pieces: Confetti.drift,
+                fall: constraints.maxHeight * 0.65,
+                turns: 420 / 360,
+                loop: true,
+              ),
+            ),
+          ),
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
               child: Column(
                 children: [
                   Align(
                     alignment: Alignment.centerRight,
                     child: IconKey(
                       icon: Icons.close_rounded,
-                      semanticLabel: 'Close',
-                      onPressed: () => Navigation.home(context),
+                      semanticLabel: 'Close and go to levels',
+                      onPressed: () => Navigation.levels(context),
                     ),
                   ),
                   Expanded(
                     child: SingleChildScrollView(
                       child: Column(
                         children: [
-                          ScaleTransition(
-                            scale: CurvedAnimation(
-                              parent: _badge,
-                              curve: Motion.popCurve,
-                            ),
-                            child: const SizedBox.square(
-                              dimension: 124,
-                              child: KeyButton(
-                                tone: KeyTone.success,
-                                height: 124,
-                                radius: 32,
-                                padding: EdgeInsets.zero,
-                                onPressed: null,
-                                child: Icon(
-                                  Icons.check_rounded,
-                                  size: 72,
-                                  color: Palette.white,
-                                ),
-                              ),
-                            ),
+                          const SizedBox(height: 8),
+                          const Entrance(
+                            duration: Duration(milliseconds: 600),
+                            curve: Motion.popCurve,
+                            fromScale: 0.2,
+                            fromTurns: -20 / 360,
+                            child: _Badge(),
                           ),
                           const SizedBox(height: 22),
-                          const Text('Board clear!', style: AppText.title),
-                          const SizedBox(height: 8),
-                          Text(
-                            _message,
-                            style: AppText.body,
-                            textAlign: TextAlign.center,
+                          Entrance(
+                            delay: const Duration(milliseconds: 250),
+                            offset: _rise,
+                            child: Column(
+                              children: [
+                                Text(
+                                  'Board clear!',
+                                  style: AppText.title.copyWith(fontSize: 32),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _message,
+                                  style: AppText.body.copyWith(fontSize: 17),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
                           ),
                           const SizedBox(height: 22),
                           _StarRow(controllers: _stars),
                           const SizedBox(height: 22),
-                          Row(
-                            children: [
-                              _Stat(
-                                value: '${_result.blocks}',
-                                label: 'blocks',
-                              ),
-                              const SizedBox(width: 10),
-                              _Stat(value: '${_result.bumps}', label: 'bumps'),
-                              const SizedBox(width: 10),
-                              _Stat(
-                                value: Formatting.clock(_result.time),
-                                label: 'time',
-                              ),
-                            ],
+                          Entrance(
+                            delay: const Duration(seconds: 1),
+                            offset: _rise,
+                            child: Row(
+                              children: [
+                                _Stat(
+                                  value: '${_result.blocks}',
+                                  label: 'blocks',
+                                ),
+                                const SizedBox(width: 10),
+                                _Stat(
+                                  value: '${_result.bumps}',
+                                  label: 'bumps',
+                                ),
+                                const SizedBox(width: 10),
+                                _Stat(
+                                  value: Formatting.clock(_result.time),
+                                  label: 'time',
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                  KeyButton(
-                    tone: KeyTone.primary,
-                    height: 70,
-                    onPressed: _next,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                  Entrance(
+                    delay: const Duration(milliseconds: 1150),
+                    offset: _rise,
+                    child: Column(
                       children: [
-                        Text(isCampaign ? 'Next level' : 'Done'),
-                        const SizedBox(width: 10),
-                        const Icon(Icons.arrow_forward_rounded),
+                        KeyButton(
+                          tone: KeyTone.primary,
+                          height: 66,
+                          radius: 22,
+                          onPressed: _next,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                isCampaign ? 'Next level' : 'Done',
+                                style: const TextStyle(fontSize: 20),
+                              ),
+                              const SizedBox(width: 10),
+                              const Icon(Icons.arrow_forward_rounded),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: KeyButton(
+                                height: 58,
+                                onPressed: () =>
+                                    Navigation.replay(context, _result.mode),
+                                child: const _IconLabel(
+                                  icon: Icons.restart_alt_rounded,
+                                  text: 'Replay',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: KeyButton(
+                                height: 58,
+                                onPressed: () => Navigation.levels(context),
+                                child: const _IconLabel(
+                                  icon: Icons.grid_view_rounded,
+                                  text: 'Levels',
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_services.ads.isReady) ...[
+                          const SizedBox(height: 12),
+                          KeyButton(
+                            tone: KeyTone.reward,
+                            height: 56,
+                            onPressed: _watchAd,
+                            child: const _IconLabel(
+                              icon: Icons.videocam_outlined,
+                              text: 'Watch a short ad for +1 hint',
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: KeyButton(
-                          height: 58,
-                          onPressed: () =>
-                              Navigation.replay(context, _result.mode),
-                          child: const _IconLabel(
-                            icon: Icons.restart_alt_rounded,
-                            text: 'Replay',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: KeyButton(
-                          height: 58,
-                          onPressed: () => Navigation.levels(context),
-                          child: const _IconLabel(
-                            icon: Icons.grid_view_rounded,
-                            text: 'Levels',
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (_services.ads.isReady) ...[
-                    const SizedBox(height: 12),
-                    KeyButton(
-                      tone: KeyTone.reward,
-                      height: 56,
-                      onPressed: _watchAd,
-                      child: const _IconLabel(
-                        icon: Icons.videocam_outlined,
-                        text: 'Watch a short ad for +1 hint',
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -253,8 +280,51 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
   }
 }
 
+class _Badge extends StatelessWidget {
+  const _Badge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 120,
+      height: 120,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(38),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x400E9F8A),
+            offset: Offset(0, 20),
+            blurRadius: 40,
+          ),
+        ],
+      ),
+      child: const KeyButton(
+        tone: KeyTone.success,
+        height: 120,
+        radius: 38,
+        padding: EdgeInsets.zero,
+        onPressed: null,
+        child: Icon(Icons.check_rounded, size: 66, color: Palette.white),
+      ),
+    );
+  }
+}
+
 class _StarRow extends StatelessWidget {
   const _StarRow({required this.controllers});
+
+  static final Animatable<double> _scale = TweenSequence([
+    TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.25), weight: 60),
+    TweenSequenceItem(tween: Tween(begin: 1.25, end: 1.0), weight: 40),
+  ]);
+
+  static final Animatable<double> _turns = TweenSequence([
+    TweenSequenceItem(
+      tween: Tween(begin: -30 / 360, end: 8 / 360),
+      weight: 60,
+    ),
+    TweenSequenceItem(tween: Tween(begin: 8 / 360, end: 0.0), weight: 40),
+  ]);
 
   final List<AnimationController> controllers;
 
@@ -265,21 +335,40 @@ class _StarRow extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Icon(Icons.star_rounded, size: size, color: Palette.edge),
-          ScaleTransition(
-            scale: CurvedAnimation(
-              parent: controllers[index],
-              curve: Motion.popCurve,
-            ),
-            child: Icon(Icons.star_rounded, size: size, color: Palette.sun),
+          StarGlyph(size: size, filled: false, strokeWidth: 1),
+          AnimatedBuilder(
+            animation: controllers[index],
+            builder: (context, child) {
+              final t = Curves.easeOut.transform(controllers[index].value);
+              return Opacity(
+                opacity: (t / 0.6).clamp(0.0, 1.0),
+                child: Transform.rotate(
+                  angle: _turns.transform(t) * 6.283185307179586,
+                  child: Transform.scale(
+                    scale: _scale.transform(t),
+                    child: child,
+                  ),
+                ),
+              );
+            },
+            child: StarGlyph(size: size, strokeWidth: 1),
           ),
         ],
       ),
     );
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [star(0, 64, 0), star(1, 84, 22), star(2, 64, 0)],
+    return Semantics(
+      label: 'Stars earned',
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          star(0, 54, 0),
+          const SizedBox(width: 8),
+          star(1, 72, 12),
+          const SizedBox(width: 8),
+          star(2, 54, 0),
+        ],
+      ),
     );
   }
 }
@@ -294,10 +383,17 @@ class _Stat extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: SurfaceCard(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        radius: 18,
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
         child: Column(
           children: [
-            Text(value, style: AppText.number),
+            Text(
+              value,
+              style: AppText.number.copyWith(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
             const SizedBox(height: 4),
             Text(label, style: AppText.body.copyWith(fontSize: 15)),
           ],
@@ -308,10 +404,15 @@ class _Stat extends StatelessWidget {
 }
 
 class _IconLabel extends StatelessWidget {
-  const _IconLabel({required this.icon, required this.text});
+  const _IconLabel({
+    required this.icon,
+    required this.text,
+    this.fontSize = 17,
+  });
 
   final IconData icon;
   final String text;
+  final double fontSize;
 
   @override
   Widget build(BuildContext context) {
@@ -320,7 +421,13 @@ class _IconLabel extends StatelessWidget {
       children: [
         Icon(icon),
         const SizedBox(width: 10),
-        Flexible(child: Text(text, overflow: TextOverflow.ellipsis)),
+        Flexible(
+          child: Text(
+            text,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w600),
+          ),
+        ),
       ],
     );
   }

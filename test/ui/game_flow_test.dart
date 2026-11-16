@@ -15,7 +15,14 @@ Future<void> solve(WidgetTester tester, Board board) async {
   for (final id in solutionOrder(board)) {
     await tester.tapAndWait(blockFinder(id));
   }
-  await tester.wait(const Duration(milliseconds: 2400));
+  await tester.wait(const Duration(milliseconds: 1400));
+}
+
+Future<void> seeResults(WidgetTester tester) async {
+  await tester.tapAndWait(
+    find.text('See results'),
+    const Duration(milliseconds: 1600),
+  );
 }
 
 void main() {
@@ -34,6 +41,10 @@ void main() {
     await solve(tester, services.levels.byNumber(1).board);
 
     expect(find.text('Board clear!'), findsOneWidget);
+    expect(find.text('See results'), findsOneWidget);
+    expect(services.progress.starsFor(1), 3);
+
+    await seeResults(tester);
     expect(find.text('Level 1 done. No bumps at all.'), findsOneWidget);
     expect(services.progress.starsFor(1), 3);
     expect(services.progress.currentLevel, 2);
@@ -67,6 +78,7 @@ void main() {
 
     await tester.tapAndWait(blockFinder(blocked.id));
     await solve(tester, board);
+    await seeResults(tester);
 
     expect(find.text('Level 2 done with 1 bump.'), findsOneWidget);
     expect(services.progress.starsFor(2), 2);
@@ -91,7 +103,7 @@ void main() {
 
     await tester.tapAndWait(blockFinder(solutionOrder(board).first));
     await tester.tapAndWait(find.text('Restart'));
-    expect(find.text('${board.blockCount}  blocks left'), findsOneWidget);
+    expect(find.text('${board.blockCount}'), findsOneWidget);
 
     await tester.close();
   });
@@ -105,7 +117,8 @@ void main() {
       home: const GameScreen(mode: CampaignMode(5)),
     );
 
-    await tester.tapAndWait(find.text('Hint'));
+    expect(find.text('Hint'), findsNothing);
+    await tester.tapAndWait(find.text('Get hint'));
     expect(find.text('Out of hints'), findsOneWidget);
     expect(find.text('Watch video · +1 hint'), findsOneWidget);
 
@@ -135,6 +148,7 @@ void main() {
     await tester.launch(services, home: GameScreen(mode: DailyMode(today)));
 
     await solve(tester, services.dailyPuzzle.boardFor(today));
+    await seeResults(tester);
 
     expect(find.text('Board clear!'), findsOneWidget);
     expect(services.daily.isTodayCompleted, isTrue);

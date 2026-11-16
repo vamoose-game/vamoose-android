@@ -11,6 +11,7 @@ import '../../state/hint_wallet.dart';
 import '../../state/progress_controller.dart';
 import '../../state/settings_controller.dart';
 import '../formatting.dart';
+import '../game/board_clear_overlay.dart';
 import '../game/board_view.dart';
 import '../game/game_mode.dart';
 import '../game/level_result.dart';
@@ -18,7 +19,6 @@ import '../game/out_of_hints_sheet.dart';
 import '../game/pause_dialog.dart';
 import '../navigation.dart';
 import '../theme/app_text.dart';
-import '../theme/motion.dart';
 import '../theme/palette.dart';
 import '../widgets/ad_banner_slot.dart';
 import '../widgets/key_button.dart';
@@ -42,7 +42,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     widget.mode.boardFrom(_services),
   );
   int _round = 0;
-  bool _finishing = false;
+  LevelResult? _result;
 
   @override
   void initState() {
@@ -80,11 +80,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _finish() async {
-    _finishing = true;
     final progress = context.read<ProgressController>();
     final daily = context.read<DailyController>();
     final hints = context.read<HintWallet>();
-    final navigator = Navigator.of(context);
     var earnedHint = false;
     switch (widget.mode) {
       case CampaignMode(:final level):
@@ -95,58 +93,55 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
           await hints.add(1);
         }
     }
-    await Future<void>.delayed(
-      Motion.blockLeaves + const Duration(milliseconds: 250),
-    );
     if (!mounted) {
       return;
     }
     _services.feedback.boardCleared();
-    unawaited(
-      navigator.pushReplacement(
-        Navigation.page<void>(
-          LevelCompleteScreen(
-            result: LevelResult(
-              mode: widget.mode,
-              blocks: _session.totalBlocks,
-              bumps: _session.bumps,
-              time: _session.elapsed,
-              stars: _session.stars,
-              earnedHint: earnedHint,
-            ),
-          ),
-        ),
+    setState(
+      () => _result = LevelResult(
+        mode: widget.mode,
+        blocks: _session.totalBlocks,
+        bumps: _session.bumps,
+        time: _session.elapsed,
+        stars: _session.stars,
+        earnedHint: earnedHint,
       ),
     );
   }
 
+  void _seeResults() {
+    final result = _result;
+    if (result != null) {
+      unawaited(
+        Navigator.of(context).pushReplacement(
+          Navigation.page<void>(LevelCompleteScreen(result: result)),
+        ),
+      );
+    }
+  }
+
   Future<void> _hint() async {
-    if (_session.hasActiveHint || _finishing) {
+    if (_session.hasActiveHint || _session.isCleared) {
       return;
     }
     final wallet = context.read<HintWallet>();
-    var hasHint = await wallet.spend();
-    if (!hasHint && mounted) {
-      hasHint = await OutOfHintsSheet.show(context) && await wallet.spend();
-    }
-    if (hasHint && mounted) {
+    if (await wallet.spend()) {
       _session.revealHint();
       _services.feedback.hintShown();
+    } else if (mounted) {
+      await OutOfHintsSheet.show(context);
     }
   }
 
   void _restart() {
-    if (_finishing) {
-      return;
-    }
-    setState(() => _round++);
+    setState(() {
+      _round++;
+      _result = null;
+    });
     _session.restart();
   }
 
   Future<void> _pause() async {
-    if (_finishing) {
-      return;
-    }
     _session.pause();
     final choice = await PauseDialog.show(
       context,
@@ -177,64 +172,52 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+          padding: const EdgeInsets.all(20),
           child: ListenableBuilder(
             listenable: _session,
             builder: (context, _) => Column(
               children: [
-                _Header(mode: widget.mode, onPause: _pause),
+                _Header(title: widget.mode.title, onPause: _pause),
                 const SizedBox(height: 16),
                 _Stats(session: _session),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Expanded(
                   child: Center(
                     child: AspectRatio(
                       aspectRatio: 1,
                       child: SurfaceCard(
                         radius: 28,
-                        padding: const EdgeInsets.all(12),
-                        child: BoardView(
-                          key: ValueKey(_round),
-                          session: _session,
-                          easyMode: easyMode,
-                          onOutcome: _onOutcome,
+                        raised: true,
+                        padding: const EdgeInsets.all(13),
+                        child: Stack(
+                          children: [
+                            BoardView(
+                              key: ValueKey(_round),
+                              session: _session,
+                              easyMode: easyMode,
+                              onOutcome: _onOutcome,
+                            ),
+                            if (_result != null)
+                              Positioned.fill(
+                                child: BoardClearOverlay(
+                                  onSeeResults: _seeResults,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                const SurfaceCard(
-                  padding: EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: Text(
-                      'Tap a block. If nothing is in its way, it slides off the board.',
-                      style: TextStyle(
-                        fontFamily: AppText.family,
-                        fontSize: 16,
-                        height: 1.4,
-                        color: Palette.ink,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
                       child: KeyButton(
                         onPressed: _restart,
-                        child: const FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.restart_alt_rounded),
-                              SizedBox(width: 10),
-                              Text('Restart'),
-                            ],
-                          ),
+                        child: const _ButtonLabel(
+                          icon: Icons.restart_alt_rounded,
+                          text: 'Restart',
                         ),
                       ),
                     ),
@@ -243,20 +226,19 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                       child: KeyButton(
                         tone: KeyTone.hint,
                         onPressed: _hint,
-                        semanticLabel: 'Hint, $hints left',
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.lightbulb_outline_rounded),
-                              const SizedBox(width: 8),
-                              const Text('Hint'),
-                              const SizedBox(width: 10),
-                              _CountBadge(count: hints),
-                            ],
-                          ),
-                        ),
+                        semanticLabel: hints > 0
+                            ? 'Use a hint, $hints left'
+                            : 'Get a hint by watching a short ad',
+                        child: hints > 0
+                            ? _ButtonLabel(
+                                icon: Icons.lightbulb_outline_rounded,
+                                text: 'Hint',
+                                trailing: _CountBadge(count: hints),
+                              )
+                            : const _ButtonLabel(
+                                icon: Icons.videocam_outlined,
+                                text: 'Get hint',
+                              ),
                       ),
                     ),
                   ],
@@ -272,9 +254,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.mode, required this.onPause});
+  const _Header({required this.title, required this.onPause});
 
-  final GameMode mode;
+  final String title;
   final VoidCallback onPause;
 
   @override
@@ -287,17 +269,12 @@ class _Header extends StatelessWidget {
           onPressed: () => Navigator.of(context).maybePop(),
         ),
         Expanded(
-          child: Column(
-            children: [
-              Text(mode.label, style: AppText.label),
-              const SizedBox(height: 2),
-              Text(
-                mode.title,
-                style: AppText.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+          child: Text(
+            title,
+            style: AppText.pageTitle,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
         IconKey(
@@ -319,7 +296,8 @@ class _Stats extends StatelessWidget {
   Widget build(BuildContext context) {
     final cleared = 1 - session.blocksLeft / session.totalBlocks;
     return SurfaceCard(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      radius: 20,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: IntrinsicHeight(
         child: Row(
           children: [
@@ -328,26 +306,31 @@ class _Stats extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: '${session.blocksLeft}',
-                          style: AppText.number,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        '${session.blocksLeft}',
+                        style: AppText.number.copyWith(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          fontFeatures: const [FontFeature.tabularFigures()],
                         ),
-                        const TextSpan(
-                          text: '  blocks left',
-                          style: AppText.body,
-                        ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'blocks left',
+                        style: AppText.body.copyWith(fontSize: 15),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
-                  ProgressBar(value: cleared, color: Palette.down, height: 8),
+                  ProgressBar(value: cleared, height: 8),
                 ],
               ),
             ),
-            const VerticalDivider(width: 32, thickness: 1, color: Palette.edge),
+            const VerticalDivider(width: 32, thickness: 1, color: Palette.line),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               mainAxisAlignment: MainAxisAlignment.center,
@@ -355,22 +338,49 @@ class _Stats extends StatelessWidget {
                 Text.rich(
                   TextSpan(
                     children: [
-                      const TextSpan(text: 'Bumps ', style: AppText.body),
+                      TextSpan(
+                        text: 'Bumps ',
+                        style: AppText.body.copyWith(fontSize: 15),
+                      ),
                       TextSpan(
                         text: '${session.bumps}',
                         style: AppText.bodyStrong.copyWith(
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 4),
-                StarsRow(stars: session.stars, size: 22),
+                const SizedBox(height: 6),
+                StarsRow(stars: session.stars, size: 20),
               ],
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ButtonLabel extends StatelessWidget {
+  const _ButtonLabel({required this.icon, required this.text, this.trailing});
+
+  final IconData icon;
+  final String text;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon),
+          const SizedBox(width: 10),
+          Text(text, style: const TextStyle(fontSize: 17)),
+          if (trailing != null) ...[const SizedBox(width: 10), trailing!],
+        ],
       ),
     );
   }

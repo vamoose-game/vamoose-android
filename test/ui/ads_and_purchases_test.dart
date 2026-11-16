@@ -112,17 +112,21 @@ void main() {
       }
     });
 
-    testWidgets('a watched video shows a hint right away', (tester) async {
+    testWidgets('a watched video adds a hint to use', (tester) async {
       await tester.launch(
         services,
         home: const GameScreen(mode: CampaignMode(5)),
       );
 
-      await tester.tapAndWait(find.text('Hint'));
+      await tester.tapAndWait(find.text('Get hint'));
       await tester.tapAndWait(find.text('Watch video · +1 hint'));
 
+      expect(find.text('+1 hint added'), findsOneWidget);
+      expect(services.hints.count, 1);
+
+      await tester.tapAndWait(find.text('Back to the puzzle'));
       expect(find.text('Out of hints'), findsNothing);
-      expect(services.hints.count, 0);
+      expect(find.text('Hint'), findsOneWidget);
       await tester.close();
     });
 
@@ -133,11 +137,12 @@ void main() {
         home: const GameScreen(mode: CampaignMode(5)),
       );
 
-      await tester.tapAndWait(find.text('Hint'));
+      await tester.tapAndWait(find.text('Get hint'));
       await tester.tapAndWait(find.text('Watch video · +1 hint'));
 
+      expect(find.text('No video right now'), findsOneWidget);
+      await tester.tapAndWait(find.text('Try again'));
       expect(find.text('Out of hints'), findsOneWidget);
-      expect(find.text('No video right now. Try again soon.'), findsOneWidget);
       await tester.close();
     });
   });

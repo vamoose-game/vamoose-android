@@ -45,7 +45,7 @@ void main() {
     await tester.tapAndWait(find.text('Play'));
 
     expect(find.text('Level 2'), findsOneWidget);
-    expect(find.text('WARM-UP · 5×5'), findsOneWidget);
+    expect(find.text('blocks left'), findsOneWidget);
 
     await tester.close();
   });

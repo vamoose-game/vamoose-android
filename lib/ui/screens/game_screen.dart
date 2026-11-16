@@ -169,78 +169,81 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
-          child: ListenableBuilder(
-            listenable: _session,
-            builder: (context, _) => Column(
-              children: [
-                _Header(title: widget.mode.title, onPause: _pause),
-                const SizedBox(height: 16),
-                _Stats(session: _session),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: Center(
-                    child: AspectRatio(
-                      aspectRatio: 1,
-                      child: SurfaceCard(
-                        radius: 28,
-                        raised: true,
-                        padding: const EdgeInsets.all(13),
-                        child: Stack(
-                          children: [
-                            BoardView(
+          child: Column(
+            children: [
+              _Header(title: widget.mode.title, onPause: _pause),
+              const SizedBox(height: 16),
+              ListenableBuilder(
+                listenable: _session,
+                builder: (context, _) => _Stats(session: _session),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: Center(
+                  child: AspectRatio(
+                    aspectRatio: 1,
+                    child: SurfaceCard(
+                      radius: 28,
+                      raised: true,
+                      padding: const EdgeInsets.all(13),
+                      child: Stack(
+                        children: [
+                          ListenableBuilder(
+                            listenable: _session,
+                            builder: (context, _) => BoardView(
                               key: ValueKey(_round),
                               session: _session,
                               onOutcome: _onOutcome,
                             ),
-                            if (_result != null)
-                              Positioned.fill(
-                                child: BoardClearOverlay(
-                                  onSeeResults: _seeResults,
-                                ),
+                          ),
+                          if (_result != null)
+                            Positioned.fill(
+                              child: BoardClearOverlay(
+                                onSeeResults: _seeResults,
                               ),
-                          ],
-                        ),
+                            ),
+                        ],
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: KeyButton(
-                        onPressed: _restart,
-                        child: const _ButtonLabel(
-                          icon: Icons.restart_alt_rounded,
-                          text: 'Restart',
-                        ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: KeyButton(
+                      onPressed: _restart,
+                      child: const _ButtonLabel(
+                        icon: Icons.restart_alt_rounded,
+                        text: 'Restart',
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: KeyButton(
-                        tone: KeyTone.hint,
-                        onPressed: _hint,
-                        semanticLabel: hints > 0
-                            ? 'Use a hint, $hints left'
-                            : 'Get a hint by watching a short ad',
-                        child: hints > 0
-                            ? _ButtonLabel(
-                                icon: Icons.lightbulb_outline_rounded,
-                                text: 'Hint',
-                                trailing: _CountBadge(count: hints),
-                              )
-                            : const _ButtonLabel(
-                                icon: Icons.videocam_outlined,
-                                text: 'Get hint',
-                              ),
-                      ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: KeyButton(
+                      tone: KeyTone.hint,
+                      onPressed: _hint,
+                      semanticLabel: hints > 0
+                          ? 'Use a hint, $hints left'
+                          : 'Get a hint by watching a short ad',
+                      child: hints > 0
+                          ? _ButtonLabel(
+                              icon: Icons.lightbulb_outline_rounded,
+                              text: 'Hint',
+                              trailing: _CountBadge(count: hints),
+                            )
+                          : const _ButtonLabel(
+                              icon: Icons.videocam_outlined,
+                              text: 'Get hint',
+                            ),
                     ),
-                  ],
-                ),
-                const AdBannerSlot(),
-              ],
-            ),
+                  ),
+                ],
+              ),
+              const AdBannerSlot(),
+            ],
           ),
         ),
       ),
@@ -321,7 +324,9 @@ class _Stats extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  ProgressBar(value: cleared, height: 8),
+                  RepaintBoundary(
+                    child: ProgressBar(value: cleared, height: 8),
+                  ),
                 ],
               ),
             ),

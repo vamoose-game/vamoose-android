@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 from PIL import Image, ImageDraw
 
 OUT = Path(__file__).resolve().parent.parent / 'assets' / 'icon'
@@ -57,13 +58,22 @@ def centered(canvas_size, mark_size, background=(0, 0, 0, 0)):
     return canvas
 
 
+def foreground(icon, scale):
+    size = icon.width
+    inner = round(size * scale)
+    offset = (size - inner) // 2
+    canvas = Image.new('RGB', (size, size), INK[:3])
+    canvas.paste(icon.convert('RGB').resize((inner, inner), Image.LANCZOS), (offset, offset))
+    pixels = np.array(canvas.convert('RGBA'))
+    pixels[(pixels[..., :3] == INK[:3]).all(axis=-1)] = 0
+    return Image.fromarray(pixels)
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
-    centered(1024, 560, INK).save(OUT / 'icon.png')
-    centered(1024, 470).save(OUT / 'foreground.png')
+    foreground(Image.open(OUT / 'icon.png'), 0.78).save(OUT / 'foreground.png')
     centered(768, 400).save(OUT / 'splash.png')
     centered(1152, 520).save(OUT / 'splash_android12.png')
-    centered(512, 280, INK).save(OUT / 'play_store_512.png')
 
 
 if __name__ == '__main__':

@@ -1,8 +1,10 @@
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:vamoose/app/app_services.dart';
 import 'package:vamoose/domain/board.dart';
 import 'package:vamoose/services/sound_effects.dart';
+import 'package:vamoose/ui/game/board_view.dart';
 import 'package:vamoose/ui/game/game_mode.dart';
 import 'package:vamoose/ui/screens/game_screen.dart';
 
@@ -190,4 +192,59 @@ void main() {
 
     await tester.close();
   });
+
+  testWidgets('fast taps let every leaving block finish its slide', (
+    tester,
+  ) async {
+    final order = solutionOrder(services.levels.byNumber(330).board);
+    await tester.launch(
+      services,
+      home: const GameScreen(mode: CampaignMode(330)),
+    );
+
+    await tester.tap(blockFinder(order[0]));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    final first = leavingOpacities(tester).single;
+    await tester.tap(blockFinder(order[1]));
+    await tester.pump(const Duration(milliseconds: 16));
+
+    expect(first, lessThan(0.9));
+    expect(leavingOpacities(tester), [lessThan(first), 1]);
+
+    await tester.close();
+  });
+
+  testWidgets('a sliding block does not repaint the other blocks', (
+    tester,
+  ) async {
+    final board = services.levels.byNumber(330).board;
+    await tester.launch(
+      services,
+      home: const GameScreen(mode: CampaignMode(330)),
+    );
+    var painted = 0;
+    debugOnProfilePaint = (renderObject) {
+      if (renderObject is RenderCustomPaint) {
+        painted++;
+      }
+    };
+    addTearDown(() => debugOnProfilePaint = null);
+
+    await tester.tap(blockFinder(board.blocks.firstWhere(board.canLeave).id));
+    await tester.pump();
+    painted = 0;
+    await tester.wait(const Duration(milliseconds: 500));
+
+    expect(painted, 0);
+
+    await tester.close();
+  });
 }
+
+List<double> leavingOpacities(WidgetTester tester) => [
+  for (final opacity in tester.widgetList<Opacity>(
+    find.descendant(of: find.byType(BoardView), matching: find.byType(Opacity)),
+  ))
+    opacity.opacity,
+];

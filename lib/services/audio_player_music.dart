@@ -10,7 +10,8 @@ class AudioPlayerMusic implements MusicPlayer {
   static const Duration _fadeStep = Duration(milliseconds: 75);
 
   final double volume;
-  final AudioPlayer _player = AudioPlayer(playerId: 'music');
+  final AudioPlayer _player = AudioPlayer(playerId: 'music')
+    ..positionUpdater = null;
   Future<void>? _loading;
   int _session = 0;
 

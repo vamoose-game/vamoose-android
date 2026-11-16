@@ -9,7 +9,7 @@ class AudioPlayerSoundEffects implements SoundEffects {
 
   static const Map<Sound, int> _voices = {
     Sound.tap: 3,
-    Sound.leave: 2,
+    Sound.leave: 3,
     Sound.bump: 2,
     Sound.hint: 1,
     Sound.clear: 1,
@@ -45,7 +45,10 @@ class AudioPlayerSoundEffects implements SoundEffects {
 
 class _Channel {
   _Channel(this._asset, int voices)
-    : _players = [for (var index = 0; index < voices; index++) AudioPlayer()];
+    : _players = [
+        for (var index = 0; index < voices; index++)
+          AudioPlayer()..positionUpdater = null,
+      ];
 
   final String _asset;
   final List<AudioPlayer> _players;

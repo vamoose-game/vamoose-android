@@ -7,6 +7,7 @@ class SettingsController extends ChangeNotifier {
 
   static const String _biggerTextKey = 'settings.biggerText';
   static const String _soundKey = 'settings.sound';
+  static const String _musicKey = 'settings.music';
   static const String _vibrationKey = 'settings.vibration';
   static const String _tutorialSeenKey = 'settings.tutorialSeen';
 
@@ -15,6 +16,8 @@ class SettingsController extends ChangeNotifier {
   bool get biggerText => _store.readBool(_biggerTextKey) ?? false;
 
   bool get sound => _store.readBool(_soundKey) ?? true;
+
+  bool get music => _store.readBool(_musicKey) ?? true;
 
   bool get vibration => _store.readBool(_vibrationKey) ?? true;
 
@@ -25,6 +28,8 @@ class SettingsController extends ChangeNotifier {
   Future<void> setBiggerText(bool value) => _write(_biggerTextKey, value);
 
   Future<void> setSound(bool value) => _write(_soundKey, value);
+
+  Future<void> setMusic(bool value) => _write(_musicKey, value);
 
   Future<void> setVibration(bool value) => _write(_vibrationKey, value);
 

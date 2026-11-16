@@ -9,7 +9,9 @@ import 'package:vamoose/services/ads/ad_service.dart';
 import 'package:vamoose/services/ads/interstitial_policy.dart';
 import 'package:vamoose/services/game_feedback.dart';
 import 'package:vamoose/services/haptics.dart';
+import 'package:vamoose/services/background_music.dart';
 import 'package:vamoose/services/link_opener.dart';
+import 'package:vamoose/services/music_player.dart';
 import 'package:vamoose/services/purchases/purchase_service.dart';
 import 'package:vamoose/services/sound_effects.dart';
 import 'package:vamoose/state/ad_free_controller.dart';
@@ -37,6 +39,16 @@ class SilentHaptics implements Haptics {
 
   @override
   void heavy() {}
+}
+
+class FakeMusicPlayer implements MusicPlayer {
+  final List<String> calls = [];
+
+  @override
+  Future<void> play() async => calls.add('play');
+
+  @override
+  Future<void> pause() async => calls.add('pause');
 }
 
 class RecordingLinkOpener implements LinkOpener {
@@ -135,5 +147,6 @@ AppServices buildTestServices({
     purchases: FakePurchaseService(adFree),
     interstitials: InterstitialPolicy(time, adFree),
     links: RecordingLinkOpener(),
+    music: BackgroundMusic(FakeMusicPlayer(), settings),
   );
 }

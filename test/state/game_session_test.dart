@@ -83,4 +83,31 @@ void main() {
     session.resume();
     expect(stopwatch.isRunning, isTrue);
   });
+
+  test('streak counts blocks that leave in a row and resets on a bump', () {
+    final session = GameSession(
+      Board(
+        size: 3,
+        blocks: [
+          block(0, 0, 0, 1, Direction.up),
+          block(1, 1, 0, 1, Direction.right),
+          block(2, 1, 2, 1, Direction.right),
+        ],
+      ),
+    );
+
+    session.tap(0);
+    expect(session.streak, 1);
+
+    session.tap(1);
+    expect(session.streak, 0);
+
+    session
+      ..tap(2)
+      ..tap(1);
+    expect(session.streak, 2);
+
+    session.restart();
+    expect(session.streak, 0);
+  });
 }

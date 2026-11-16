@@ -67,7 +67,7 @@ class AppServices {
       daily: DailyController(store, clock),
       dailyPuzzle: const DailyPuzzle(),
       feedback: GameFeedback(
-        sounds: await AudioPlayerSoundEffects.create(),
+        sounds: AudioPlayerSoundEffects.create(),
         haptics: const SystemHaptics(),
         settings: settings,
       ),

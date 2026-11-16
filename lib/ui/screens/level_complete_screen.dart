@@ -51,7 +51,7 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
       _timers.add(
         Timer(_firstStar + Motion.starGap * index, () {
           _stars[index].forward();
-          _services.feedback.starEarned();
+          _services.feedback.starEarned(index);
         }),
       );
     }

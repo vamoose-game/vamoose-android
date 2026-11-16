@@ -39,20 +39,48 @@ void main() {
 
   test('plays sounds and vibrates by default', () {
     feedback
-      ..blockLeft()
+      ..blockLeft(streak: 1)
       ..blockBumped()
       ..boardCleared();
 
-    expect(sounds.played, [Sound.slide, Sound.bump, Sound.clear]);
+    expect(sounds.played, [
+      (Sound.leave, 0),
+      (Sound.bump, 0),
+      (Sound.clear, 0),
+    ]);
     expect(haptics.pulses, 3);
+  });
+
+  test('each block in a streak plays the next note up', () {
+    for (var streak = 1; streak <= 4; streak++) {
+      feedback.blockLeft(streak: streak);
+    }
+
+    expect(sounds.played.map((played) => played.$2), [0, 1, 2, 3]);
+  });
+
+  test('long streaks stay on the top note', () {
+    feedback.blockLeft(streak: 30);
+
+    expect(sounds.played.single, (Sound.leave, Sound.leave.variants - 1));
+  });
+
+  test('stars ring higher one after another', () {
+    feedback
+      ..starEarned(0)
+      ..starEarned(1)
+      ..starEarned(2);
+
+    expect(sounds.played, [(Sound.star, 0), (Sound.star, 1), (Sound.star, 2)]);
   });
 
   test('stays quiet when sound is off', () async {
     await settings.setSound(false);
 
     feedback
-      ..blockLeft()
-      ..hintShown();
+      ..blockLeft(streak: 1)
+      ..hintShown()
+      ..keyPressed();
 
     expect(sounds.played, isEmpty);
     expect(haptics.pulses, 1);
@@ -63,7 +91,7 @@ void main() {
 
     feedback.blockBumped();
 
-    expect(sounds.played, [Sound.bump]);
+    expect(sounds.played, [(Sound.bump, 0)]);
     expect(haptics.pulses, 0);
   });
 }

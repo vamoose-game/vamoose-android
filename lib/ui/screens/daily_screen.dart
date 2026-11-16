@@ -11,7 +11,10 @@ import '../game/game_mode.dart';
 import '../navigation.dart';
 import '../theme/app_text.dart';
 import '../theme/palette.dart';
+import '../widgets/block_face.dart';
+import '../widgets/entrance.dart';
 import '../widgets/key_button.dart';
+import '../widgets/looping.dart';
 import '../widgets/mini_board.dart';
 import '../widgets/page_header.dart';
 import '../widgets/surface_card.dart';
@@ -24,11 +27,11 @@ class DailyScreen extends StatelessWidget {
     final daily = context.watch<DailyController>();
     final today = daily.today;
     final board = context.read<AppServices>().dailyPuzzle.boardFor(today);
-    final streak = daily.currentStreak;
+    final week = daily.currentWeek;
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
           child: Column(
             children: [
               const PageHeader(title: 'Daily puzzle'),
@@ -38,31 +41,20 @@ class DailyScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       SurfaceCard(
+                        padding: const EdgeInsets.all(16),
                         child: Row(
                           children: [
-                            Container(
-                              width: 58,
-                              height: 58,
-                              decoration: BoxDecoration(
-                                color: Palette.alert,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: const Icon(
-                                Icons.local_fire_department_outlined,
-                                color: Palette.white,
-                                size: 32,
-                              ),
-                            ),
+                            const _FlameKey(),
                             const SizedBox(width: 14),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '$streak-day streak',
+                                    '${daily.currentStreak}-day streak',
                                     style: AppText.heading,
                                   ),
-                                  const SizedBox(height: 2),
+                                  const SizedBox(height: 3),
                                   Text(
                                     _streakHint(daily),
                                     style: AppText.body.copyWith(fontSize: 15),
@@ -71,6 +63,7 @@ class DailyScreen extends StatelessWidget {
                               ),
                             ),
                             Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(
                                   'Best',
@@ -78,33 +71,43 @@ class DailyScreen extends StatelessWidget {
                                 ),
                                 Text(
                                   '${daily.bestStreak}',
-                                  style: AppText.number,
+                                  style: AppText.heading,
                                 ),
                               ],
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 12),
                       Row(
                         children: [
-                          for (final day in daily.currentWeek) ...[
-                            if (day != daily.currentWeek.first)
-                              const SizedBox(width: 6),
+                          for (var index = 0; index < week.length; index++) ...[
+                            if (index > 0) const SizedBox(width: 6),
                             Expanded(
-                              child: _DayChip(day: day, daily: daily),
+                              child: week[index] == today
+                                  ? _DayChip(day: week[index], daily: daily)
+                                  : Entrance(
+                                      delay: Duration(milliseconds: index * 50),
+                                      duration: const Duration(
+                                        milliseconds: 320,
+                                      ),
+                                      offset: const Offset(0, 12),
+                                      child: _DayChip(
+                                        day: week[index],
+                                        daily: daily,
+                                      ),
+                                    ),
                             ),
                           ],
                         ],
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 12),
                       SurfaceCard(
-                        padding: const EdgeInsets.all(20),
+                        radius: 26,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Expanded(
                                   child: Column(
@@ -117,34 +120,32 @@ class DailyScreen extends StatelessWidget {
                                           color: Palette.alert,
                                         ),
                                       ),
-                                      const SizedBox(height: 4),
+                                      const SizedBox(height: 3),
                                       Text(
                                         Formatting.longDate(today),
-                                        style: AppText.heading.copyWith(
-                                          fontSize: 22,
-                                        ),
+                                        style: AppText.heading,
                                       ),
                                     ],
                                   ),
                                 ),
                                 Container(
+                                  height: 34,
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 12,
-                                    vertical: 8,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFFFF3D6),
-                                    borderRadius: BorderRadius.circular(20),
+                                    color: Palette.cream,
+                                    borderRadius: BorderRadius.circular(17),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       const Icon(
                                         Icons.lightbulb_outline_rounded,
-                                        size: 18,
+                                        size: 16,
                                         color: Palette.ink,
                                       ),
-                                      const SizedBox(width: 4),
+                                      const SizedBox(width: 6),
                                       Text(
                                         '+1 hint',
                                         style: AppText.bodyStrong.copyWith(
@@ -156,15 +157,15 @@ class DailyScreen extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 18),
+                            const SizedBox(height: 16),
                             Row(
                               children: [
                                 Expanded(
-                                  flex: 11,
+                                  flex: 166,
                                   child: DecoratedBox(
                                     decoration: BoxDecoration(
-                                      color: Palette.mist,
-                                      borderRadius: BorderRadius.circular(18),
+                                      color: Palette.well,
+                                      borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: Padding(
                                       padding: const EdgeInsets.all(8),
@@ -172,9 +173,9 @@ class DailyScreen extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 18),
+                                const SizedBox(width: 16),
                                 Expanded(
-                                  flex: 9,
+                                  flex: 130,
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -196,9 +197,10 @@ class DailyScreen extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 16),
                             KeyButton(
                               tone: KeyTone.primary,
+                              height: 62,
                               onPressed: () =>
                                   Navigation.play(context, DailyMode(today)),
                               child: Row(
@@ -211,6 +213,7 @@ class DailyScreen extends StatelessWidget {
                                       daily.isTodayCompleted
                                           ? 'Play again'
                                           : 'Play today\'s puzzle',
+                                      style: const TextStyle(fontSize: 19),
                                     ),
                                   ),
                                 ],
@@ -241,6 +244,41 @@ String _streakHint(DailyController daily) {
     return 'Solve today to start a streak';
   }
   return 'Solve today to make it ${daily.currentStreak + 1}';
+}
+
+class _FlameKey extends StatelessWidget {
+  const _FlameKey();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.square(
+      dimension: 54,
+      child: ShadedTile(
+        color: Palette.right,
+        radius: BorderRadius.circular(18),
+        edge: 5,
+        child: Looping(
+          period: const Duration(milliseconds: 1600),
+          child: const Icon(
+            Icons.local_fire_department_outlined,
+            color: Palette.white,
+            size: 30,
+          ),
+          builder: (context, t, child) {
+            final wave = keyframes(t, const [
+              (0, 0),
+              (0.5, 1),
+              (1, 0),
+            ], curve: Curves.easeInOut);
+            return Transform.rotate(
+              angle: -4 / 180 * 3.141592653589793 * wave,
+              child: Transform.scale(scale: 1 + 0.08 * wave, child: child),
+            );
+          },
+        ),
+      ),
+    );
+  }
 }
 
 class _Countdown extends StatefulWidget {
@@ -276,11 +314,15 @@ class _CountdownState extends State<_Countdown> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         const Icon(Icons.schedule_rounded, size: 18, color: Palette.slate),
-        const SizedBox(width: 6),
-        const Text('New puzzle in ', style: AppText.body),
+        const SizedBox(width: 8),
+        Text('New puzzle in ', style: AppText.body.copyWith(fontSize: 15)),
         Text(
           Formatting.countdown(widget.daily.timeUntilNextPuzzle),
-          style: AppText.bodyStrong.copyWith(fontWeight: FontWeight.w800),
+          style: AppText.bodyStrong.copyWith(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
         ),
       ],
     );
@@ -298,62 +340,101 @@ class _DayChip extends StatelessWidget {
     final isToday = day == daily.today;
     final done = daily.isCompleted(day);
     final missed = !done && day.isBefore(daily.today);
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(
-        color: Palette.white,
-        borderRadius: BorderRadius.circular(14),
-        border: isToday ? Border.all(color: Palette.ink, width: 2.5) : null,
-      ),
-      child: Column(
-        children: [
-          FittedBox(
-            child: Text(
-              Formatting.weekdayShort(day),
-              style: AppText.body.copyWith(fontSize: 13),
+    final content = Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        FittedBox(
+          child: Text(
+            Formatting.weekdayShort(day),
+            style: AppText.body.copyWith(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          FittedBox(
-            child: Text(
-              '${day.day}',
-              style: AppText.bodyStrong.copyWith(fontWeight: FontWeight.w800),
-            ),
+        ),
+        const SizedBox(height: 5),
+        FittedBox(
+          child: Text(
+            '${day.day}',
+            style: AppText.bodyStrong.copyWith(fontWeight: FontWeight.w700),
           ),
-          const SizedBox(height: 6),
-          SizedBox.square(
-            dimension: 22,
-            child: done
-                ? DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: Palette.down,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Icon(
-                      Icons.check_rounded,
-                      size: 16,
-                      color: Palette.white,
-                    ),
-                  )
-                : isToday
-                ? DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: Palette.sun,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  )
-                : Center(
-                    child: Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: missed ? Palette.edge : Colors.transparent,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
+        ),
+        const SizedBox(height: 5),
+        SizedBox.square(
+          dimension: 22,
+          child: done
+              ? DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Palette.down,
+                    borderRadius: BorderRadius.circular(7),
                   ),
+                  child: const Icon(
+                    Icons.check_rounded,
+                    size: 16,
+                    color: Palette.white,
+                  ),
+                )
+              : isToday
+              ? DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Palette.sun,
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                )
+              : Center(
+                  child: missed
+                      ? Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: Palette.muted,
+                            shape: BoxShape.circle,
+                          ),
+                        )
+                      : null,
+                ),
+        ),
+      ],
+    );
+    if (!isToday) {
+      return SizedBox(
+        height: 88,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: Palette.white,
+            borderRadius: BorderRadius.circular(16),
           ),
-        ],
-      ),
+          child: content,
+        ),
+      );
+    }
+    return Looping(
+      period: const Duration(milliseconds: 1800),
+      child: content,
+      builder: (context, t, child) {
+        final wave = keyframes(t, const [
+          (0, 0),
+          (0.5, 1),
+          (1, 0),
+        ], curve: Curves.easeInOut);
+        return SizedBox(
+          height: 88,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Palette.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Palette.ink, width: 3),
+              boxShadow: [
+                BoxShadow(
+                  color: Palette.ink.withValues(alpha: 0.12 * wave),
+                  spreadRadius: 5 * wave,
+                ),
+              ],
+            ),
+            child: child,
+          ),
+        );
+      },
     );
   }
 }
@@ -367,12 +448,19 @@ class _Fact extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label, style: AppText.body.copyWith(fontSize: 15)),
-          Text(value, style: AppText.heading.copyWith(fontSize: 18)),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: AppText.bodyStrong.copyWith(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ],
       ),
     );

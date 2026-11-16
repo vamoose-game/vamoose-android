@@ -34,8 +34,8 @@ void main() {
     expect(services.settings.easyMode, isTrue);
     expect(services.settings.biggerText, isTrue);
 
-    await tester.scrollUntilVisible(find.text('Vamoose · version 1.0.0'), 200);
-    expect(find.text('Vamoose · version 1.0.0'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Version 1.0.0'), 200);
+    expect(find.text('Version 1.0.0'), findsOneWidget);
 
     await tester.close();
   });

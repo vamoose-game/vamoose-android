@@ -13,6 +13,7 @@ import '../theme/app_text.dart';
 import '../theme/palette.dart';
 import '../widgets/page_header.dart';
 import '../widgets/surface_card.dart';
+import '../widgets/toggle_switch.dart';
 import '../widgets/toast.dart';
 import 'how_to_play_screen.dart';
 
@@ -150,7 +151,10 @@ class SettingsScreen extends StatelessWidget {
                             ),
                             child: Text(
                               price,
-                              style: AppText.label.copyWith(color: Palette.ink),
+                              style: AppText.bodyStrong.copyWith(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                     onTap: () => _buyRemoveAds(context),
@@ -206,15 +210,16 @@ class SettingsScreen extends StatelessWidget {
                 child: Text(
                   'Reset progress',
                   style: AppText.button.copyWith(
-                    color: Palette.alert,
-                    fontSize: 17,
+                    color: Palette.danger,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ),
             const SizedBox(height: 6),
             Text(
-              '${AppInfo.name} · version ${AppInfo.version}',
+              'Version ${AppInfo.version}',
               style: AppText.body.copyWith(fontSize: 15),
               textAlign: TextAlign.center,
             ),
@@ -233,7 +238,7 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 24, 4, 10),
+      padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
       child: Text(text, style: AppText.label),
     );
   }
@@ -248,16 +253,11 @@ class _Group extends StatelessWidget {
   Widget build(BuildContext context) {
     return SurfaceCard(
       padding: EdgeInsets.zero,
+      radius: 20,
       child: Column(
         children: [
           for (var index = 0; index < children.length; index++) ...[
-            if (index > 0)
-              const Divider(
-                height: 1,
-                indent: 18,
-                endIndent: 18,
-                color: Palette.edge,
-              ),
+            if (index > 0) const Divider(height: 1, color: Palette.mist),
             children[index],
           ],
         ],
@@ -285,30 +285,36 @@ class _SwitchRow extends StatelessWidget {
       child: InkWell(
         onTap: () => onChanged(!value),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: AppText.bodyStrong.copyWith(fontSize: 17),
-                    ),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 2),
+          padding: const EdgeInsets.fromLTRB(16, 9, 14, 9),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 34),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        subtitle!,
-                        style: AppText.body.copyWith(fontSize: 15),
+                        title,
+                        style: AppText.bodyStrong.copyWith(fontSize: 17),
                       ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle!,
+                          style: AppText.body.copyWith(
+                            fontSize: 15,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Switch(value: value, onChanged: onChanged),
-            ],
+                const SizedBox(width: 12),
+                ToggleSwitch(value: value, onChanged: onChanged),
+              ],
+            ),
           ),
         ),
       ),
@@ -336,19 +342,22 @@ class _LinkRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-        child: Row(
-          children: [
-            Icon(icon, color: iconColor, size: 22),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                title,
-                style: AppText.bodyStrong.copyWith(fontSize: 17),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: SizedBox(
+          height: 52,
+          child: Row(
+            children: [
+              Icon(icon, color: iconColor, size: 22),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppText.bodyStrong.copyWith(fontSize: 17),
+                ),
               ),
-            ),
-            ?trailing,
-          ],
+              ?trailing,
+            ],
+          ),
         ),
       ),
     );

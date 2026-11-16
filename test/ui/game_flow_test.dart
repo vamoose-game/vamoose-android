@@ -137,6 +137,11 @@ void main() {
 
     await tester.tapAndWait(find.byIcon(Icons.pause_rounded));
     expect(find.text('Paused'), findsOneWidget);
+    expect(find.text('Music on'), findsOneWidget);
+
+    await tester.tapAndWait(find.text('Music on'));
+    expect(services.settings.music, isFalse);
+    expect(find.text('Music off'), findsOneWidget);
 
     await tester.tapAndWait(find.text('Resume'));
     expect(find.text('Paused'), findsNothing);

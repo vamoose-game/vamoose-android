@@ -76,6 +76,7 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Padding(
           padding: EdgeInsets.fromLTRB(24, 40, 24, 44),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(
                 child: Column(

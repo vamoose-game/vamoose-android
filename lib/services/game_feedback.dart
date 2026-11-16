@@ -15,8 +15,8 @@ class GameFeedback {
 
   void keyPressed() => _play(Sound.tap);
 
-  void blockLeft() {
-    _play(Sound.slide);
+  void blockLeft({required int streak}) {
+    _play(Sound.leave, variant: streak - 1);
     _vibrate(_haptics.light);
   }
 
@@ -32,11 +32,11 @@ class GameFeedback {
     _vibrate(_haptics.heavy);
   }
 
-  void starEarned() => _play(Sound.star);
+  void starEarned(int index) => _play(Sound.star, variant: index);
 
-  void _play(Sound sound) {
+  void _play(Sound sound, {int variant = 0}) {
     if (_settings.sound) {
-      _sounds.play(sound);
+      _sounds.play(sound, variant: variant.clamp(0, sound.variants - 1));
     }
   }
 

@@ -22,10 +22,10 @@ import 'fixed_clock.dart';
 import 'memory_store.dart';
 
 class RecordingSounds implements SoundEffects {
-  final List<Sound> played = [];
+  final List<(Sound, int)> played = [];
 
   @override
-  void play(Sound sound) => played.add(sound);
+  void play(Sound sound, {int variant = 0}) => played.add((sound, variant));
 }
 
 class SilentHaptics implements Haptics {

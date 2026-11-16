@@ -17,11 +17,14 @@ class GameSession extends ChangeNotifier {
   final Stopwatch _stopwatch;
   Board _board;
   int _bumps = 0;
+  int _streak = 0;
   int? _hintedBlockId;
 
   Board get board => _board;
 
   int get bumps => _bumps;
+
+  int get streak => _streak;
 
   int get stars => StarRating.forBumps(_bumps);
 
@@ -42,6 +45,7 @@ class GameSession extends ChangeNotifier {
     switch (outcome) {
       case BlockLeaves():
         _board = _board.without(blockId);
+        _streak++;
         if (_hintedBlockId == blockId) {
           _hintedBlockId = null;
         }
@@ -50,6 +54,7 @@ class GameSession extends ChangeNotifier {
         }
       case BlockBumps():
         _bumps++;
+        _streak = 0;
     }
     notifyListeners();
     return outcome;
@@ -65,6 +70,7 @@ class GameSession extends ChangeNotifier {
   void restart() {
     _board = _initial;
     _bumps = 0;
+    _streak = 0;
     _hintedBlockId = null;
     _stopwatch
       ..reset()

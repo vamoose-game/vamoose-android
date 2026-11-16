@@ -69,7 +69,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     final feedback = _services.feedback;
     switch (outcome) {
       case BlockLeaves():
-        feedback.blockLeft();
+        feedback.blockLeft(streak: _session.streak);
         if (_session.isCleared) {
           unawaited(_finish());
         }

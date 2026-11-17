@@ -7,11 +7,13 @@ Android · Flutter · no backend · version 1.0.0
 ## Game
 
 - 360 levels in 12 chapters, boards from 6×6 to 8×8
-- Locked blocks from level 12: a block with a padlock moves only after the block with its key has left; two pairs (gold and silver) from level 76
+- Locked blocks from level 12: a block with a padlock moves only after the block with its key has left; two pairs (gold and silver) from level 76, three (with bronze) from level 181
 - Every level is solvable in any order: you can never get stuck
 - Stars: no bumps = 3, 1–2 bumps = 2, 3 or more = 1
-- 3 starting hints, 1 free hint every day, +1 hint for each daily puzzle
-- Daily puzzle with streaks
+- Coins: start with 100 and 3 hints; +10 for a first clear and +5 for each new star, ×2 with a video once per level
+- Hints: 50 coins or a short video
+- Daily streak: login coins for 7 days (+10 to +40, then a chest with 150 coins and a streak freeze), streak freezes for 60 coins (hold 2), and a daily puzzle worth +50
+- Board themes: Classic (free), Wood (2,000 coins) and Night (3,000 coins)
 - Settings: sound effects, music, vibration
 - AdMob ads with Google consent (UMP) and a one-time Remove ads purchase
 
@@ -35,7 +37,7 @@ flutter test
 | --- | --- |
 | `lib/domain` | Board, tap rules, restraints (locks), stars, chapters, level generator and its features |
 | `lib/data` | Local storage and level catalog |
-| `lib/state` | Settings, progress, hints, daily streak, game session |
+| `lib/state` | Settings, progress, coins, hints, daily streak, themes, game session |
 | `lib/services` | Sound, haptics, AdMob ads, Play Billing |
 | `lib/ui` | Theme, widgets and screens |
 | `lib/app` | Composition root and app widget |
@@ -48,7 +50,7 @@ flutter test
 | Consent | First launch | Google UMP form before any ad loads; Settings › Ad privacy choices reopens it |
 | Banner | Levels, Game | Adaptive, at the bottom; gone after Remove ads |
 | Interstitial | After Next level | Every 3rd cleared level, never before level 10, 2 minutes apart; gone after Remove ads |
-| Rewarded | Out of hints, Level complete | +1 hint, given only when the video reward is earned |
+| Rewarded | Hint sheet, Level complete | A free hint, or ×2 level coins once per level; given only when the video reward is earned |
 | Remove ads | Settings | One-time product `remove_ads`; Restore purchase brings it back |
 
 

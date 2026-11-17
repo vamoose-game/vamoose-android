@@ -16,6 +16,7 @@ abstract final class HintSheet {
   static Future<bool> show(BuildContext context) async {
     final granted = await showModalBottomSheet<bool>(
       context: context,
+      isScrollControlled: true,
       barrierColor: Palette.scrim,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(34)),
@@ -184,19 +185,19 @@ class _Choose extends StatelessWidget {
           height: 62,
           radius: 20,
           onPressed: onWatch,
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.play_circle_outline_rounded),
-              SizedBox(width: 10),
-              Flexible(
-                child: Text(
+          child: const FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.play_circle_outline_rounded),
+                SizedBox(width: 10),
+                Text(
                   'Watch a short video: free hint',
-                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(fontSize: 17),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 6),

@@ -7,6 +7,7 @@ import '../../state/streak_controller.dart';
 import '../game/game_mode.dart';
 import '../navigation.dart';
 import '../theme/app_text.dart';
+import '../theme/board_colors.dart';
 import '../theme/motion.dart';
 import '../theme/palette.dart';
 import '../widgets/block_face.dart';
@@ -20,6 +21,7 @@ import '../widgets/surface_card.dart';
 import '../widgets/tap_ring.dart';
 import 'daily_screen.dart';
 import 'settings_screen.dart';
+import 'theme_shop_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -39,6 +41,13 @@ class HomeScreen extends StatelessWidget {
                 children: [
                   const CoinChip(height: 48),
                   const Spacer(),
+                  IconKey(
+                    icon: Icons.palette_outlined,
+                    semanticLabel: 'Themes',
+                    onPressed: () => Navigator.of(context)
+                        .push(Navigation.page<void>(const ThemeShopScreen())),
+                  ),
+                  const SizedBox(width: 10),
                   IconKey(
                     icon: Icons.settings_outlined,
                     semanticLabel: 'Settings',
@@ -202,6 +211,7 @@ class _DemoBoard extends StatelessWidget {
       child: SurfaceCard(
         radius: 30,
         raised: true,
+        color: BoardColors.of(context).board,
         padding: const EdgeInsets.all(12),
         child: SizedBox.square(
           dimension: _board,

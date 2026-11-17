@@ -10,14 +10,17 @@ import '../../state/daily_controller.dart';
 import '../../state/progress_controller.dart';
 import '../../state/settings_controller.dart';
 import '../../state/streak_controller.dart';
+import '../../state/theme_controller.dart';
 import '../navigation.dart';
 import '../theme/app_text.dart';
+import '../theme/board_colors.dart';
 import '../theme/palette.dart';
 import '../widgets/page_header.dart';
 import '../widgets/surface_card.dart';
 import '../widgets/toggle_switch.dart';
 import '../widgets/toast.dart';
 import 'how_to_play_screen.dart';
+import 'theme_shop_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -27,13 +30,14 @@ class SettingsScreen extends StatelessWidget {
     final daily = context.read<DailyController>();
     final coins = context.read<CoinWallet>();
     final streak = context.read<StreakController>();
+    final themes = context.read<ThemeController>();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Palette.white,
         title: const Text('Reset progress?', style: AppText.heading),
         content: const Text(
-          'Stars, unlocked levels, coins and your daily streak will be cleared.',
+          'Stars, unlocked levels, coins, themes and your daily streak will be cleared.',
           style: AppText.body,
         ),
         actions: [
@@ -59,6 +63,7 @@ class SettingsScreen extends StatelessWidget {
       await daily.reset();
       await coins.reset();
       await streak.reset();
+      await themes.reset();
     }
   }
 
@@ -120,6 +125,34 @@ class SettingsScreen extends StatelessWidget {
                   title: 'Vibration',
                   value: settings.vibration,
                   onChanged: settings.setVibration,
+                ),
+              ],
+            ),
+            const _SectionLabel('LOOK'),
+            _Group(
+              children: [
+                _LinkRow(
+                  icon: Icons.palette_outlined,
+                  title: 'Theme',
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        BoardColors.from(
+                          context.watch<ThemeController>().active,
+                        ).name,
+                        style: AppText.body.copyWith(fontSize: 15),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: Palette.slate,
+                      ),
+                    ],
+                  ),
+                  onTap: () =>
+                      Navigator.of(context)
+                          .push(Navigation.page<void>(const ThemeShopScreen())),
                 ),
               ],
             ),

@@ -21,6 +21,7 @@ import 'package:vamoose/state/hint_wallet.dart';
 import 'package:vamoose/state/progress_controller.dart';
 import 'package:vamoose/state/settings_controller.dart';
 import 'package:vamoose/state/streak_controller.dart';
+import 'package:vamoose/state/theme_controller.dart';
 
 import 'fixed_clock.dart';
 import 'memory_store.dart';
@@ -153,5 +154,6 @@ AppServices buildTestServices({
     interstitials: InterstitialPolicy(time, adFree),
     links: RecordingLinkOpener(),
     music: BackgroundMusic(FakeMusicPlayer(), settings),
+    themes: ThemeController(memory, coins),
   );
 }

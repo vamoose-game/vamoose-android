@@ -4,6 +4,7 @@ import '../../domain/block.dart';
 import '../../domain/cell.dart';
 import '../../domain/tap_outcome.dart';
 import '../../state/game_session.dart';
+import '../theme/board_colors.dart';
 import '../theme/motion.dart';
 import '../theme/palette.dart';
 import '../widgets/block_face.dart';
@@ -99,7 +100,11 @@ class _BoardViewState extends State<BoardView>
                 Positioned.fill(
                   child: RepaintBoundary(
                     child: CustomPaint(
-                      painter: _WellsPainter(size: board.size, gap: _gap),
+                      painter: _WellsPainter(
+                        size: board.size,
+                        gap: _gap,
+                        color: BoardColors.of(context).well,
+                      ),
                     ),
                   ),
                 ),
@@ -191,16 +196,21 @@ class _BoardViewState extends State<BoardView>
 }
 
 class _WellsPainter extends CustomPainter {
-  const _WellsPainter({required this.size, required this.gap});
+  const _WellsPainter({
+    required this.size,
+    required this.gap,
+    required this.color,
+  });
 
   final int size;
   final double gap;
+  final Color color;
 
   @override
   void paint(Canvas canvas, Size area) {
     final cell = area.width / size;
     final radius = Radius.circular(cell * 0.22);
-    final paint = Paint()..color = Palette.well;
+    final paint = Paint()..color = color;
     for (var row = 0; row < size; row++) {
       for (var column = 0; column < size; column++) {
         canvas.drawRRect(
@@ -221,7 +231,9 @@ class _WellsPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_WellsPainter oldDelegate) =>
-      oldDelegate.size != size || oldDelegate.gap != gap;
+      oldDelegate.size != size ||
+      oldDelegate.gap != gap ||
+      oldDelegate.color != color;
 }
 
 class _Leaving {
@@ -398,7 +410,7 @@ class _PlayableBlockState extends State<_PlayableBlock>
                   scale: scale,
                   child: _hit.isAnimating
                       ? _face(
-                          ringColor: Palette.ink,
+                          ringColor: BoardColors.of(context).ink,
                           ringWidth: _ringPath.transform(
                             Curves.easeOut.transform(_hit.value),
                           ),

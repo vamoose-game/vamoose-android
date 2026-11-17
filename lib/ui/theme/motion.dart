@@ -15,6 +15,8 @@ abstract final class Motion {
   static const Duration locksDemo = Duration(milliseconds: 4800);
   static const Duration coinCount = Duration(milliseconds: 700);
   static const Duration coinSpin = Duration(milliseconds: 900);
+  static const Duration themeSwap = Duration(milliseconds: 300);
+  static const Duration themePop = Duration(milliseconds: 420);
   static const Duration bump = Duration(milliseconds: 340);
   static const double bumpDistance = 10;
   static const Duration inTheWay = Duration(milliseconds: 900);

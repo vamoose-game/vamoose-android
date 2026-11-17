@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/widgets.dart';
 
 import '../../domain/direction.dart';
+import '../theme/board_colors.dart';
 import '../theme/palette.dart';
 import 'glyphs.dart';
 
@@ -26,6 +27,7 @@ class BlockFace extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final color = BoardColors.of(context).forDirection(direction);
     return LayoutBuilder(
       builder: (context, constraints) {
         final shortest = constraints.biggest.shortestSide;
@@ -46,7 +48,7 @@ class BlockFace extends StatelessWidget {
           child: CustomPaint(
             foregroundPainter: stripes > 0 ? _Stripes(radius, stripes) : null,
             child: ShadedTile(
-              color: Palette.forDirection(direction),
+              color: color,
               radius: radius,
               edge: (shortest * 0.1).clamp(3.0, 6.0),
               child: _arrow(shortest),

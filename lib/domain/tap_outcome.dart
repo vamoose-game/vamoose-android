@@ -1,4 +1,5 @@
 import 'block.dart';
+import 'restraint.dart';
 
 sealed class TapOutcome {
   const TapOutcome(this.block);
@@ -13,7 +14,8 @@ final class BlockLeaves extends TapOutcome {
 }
 
 final class BlockBumps extends TapOutcome {
-  const BlockBumps(super.block, {required this.blocker});
+  const BlockBumps(super.block, {required this.blocker, this.restraint});
 
   final Block blocker;
+  final Restraint? restraint;
 }

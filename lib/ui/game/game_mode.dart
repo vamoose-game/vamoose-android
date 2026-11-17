@@ -1,5 +1,6 @@
 import '../../app/app_services.dart';
 import '../../domain/board.dart';
+import '../../domain/chapters.dart';
 
 sealed class GameMode {
   const GameMode();
@@ -7,6 +8,8 @@ sealed class GameMode {
   Board boardFrom(AppServices services);
 
   String get title;
+
+  String? get chapter;
 }
 
 final class CampaignMode extends GameMode {
@@ -20,6 +23,9 @@ final class CampaignMode extends GameMode {
 
   @override
   String get title => 'Level $level';
+
+  @override
+  String get chapter => Chapters.of(level).name;
 }
 
 final class DailyMode extends GameMode {
@@ -32,4 +38,7 @@ final class DailyMode extends GameMode {
 
   @override
   String get title => 'Daily puzzle';
+
+  @override
+  String? get chapter => null;
 }

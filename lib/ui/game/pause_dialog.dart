@@ -1,86 +1,23 @@
-import 'dart:ui';
-
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../state/settings_controller.dart';
 import '../theme/app_text.dart';
-import '../theme/motion.dart';
 import '../theme/palette.dart';
+import '../widgets/card_dialog.dart';
 import '../widgets/key_button.dart';
 
 enum PauseChoice { resume, restart, levels, home }
 
 abstract final class PauseDialog {
-  static const Duration _cardDelay = Duration(milliseconds: 60);
-  static const Duration _cardIn = Duration(milliseconds: 320);
-
   static Future<PauseChoice> show(
     BuildContext context, {
     required String subtitle,
   }) async {
-    final total = _cardDelay + _cardIn;
-    final choice = await showGeneralDialog<PauseChoice>(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: 'Resume',
-      barrierColor: Colors.transparent,
-      transitionDuration: total,
-      pageBuilder: (context, _, _) => _PauseCard(subtitle: subtitle),
-      transitionBuilder: (context, animation, _, child) {
-        final scrim = CurvedAnimation(
-          parent: animation,
-          curve: Interval(
-            0,
-            Motion.scrimFade.inMilliseconds / total.inMilliseconds,
-            curve: Curves.easeOut,
-          ),
-        );
-        final card = CurvedAnimation(
-          parent: animation,
-          curve: Interval(
-            _cardDelay.inMilliseconds / total.inMilliseconds,
-            1,
-            curve: Motion.cardCurve,
-          ),
-        );
-        return Stack(
-          children: [
-            Positioned.fill(
-              child: IgnorePointer(
-                child: AnimatedBuilder(
-                  animation: scrim,
-                  builder: (context, _) => BackdropFilter(
-                    filter: ImageFilter.blur(
-                      sigmaX: 6 * scrim.value,
-                      sigmaY: 6 * scrim.value,
-                    ),
-                    child: ColoredBox(
-                      color: Palette.scrim.withValues(
-                        alpha: 0.55 * scrim.value,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            AnimatedBuilder(
-              animation: card,
-              child: child,
-              builder: (context, child) => Opacity(
-                opacity: card.value.clamp(0.0, 1.0),
-                child: Transform.translate(
-                  offset: Offset(0, 24 * (1 - card.value)),
-                  child: Transform.scale(
-                    scale: 0.96 + 0.04 * card.value,
-                    child: child,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+    final choice = await CardDialog.show<PauseChoice>(
+      context,
+      label: 'Resume',
+      builder: (context) => _PauseCard(subtitle: subtitle),
     );
     return choice ?? PauseChoice.resume;
   }
@@ -95,143 +32,115 @@ class _PauseCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsController>();
     void choose(PauseChoice choice) => Navigator.of(context).pop(choice);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(22),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: Palette.white,
-            borderRadius: BorderRadius.circular(32),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x401B2340),
-                offset: Offset(0, 30),
-                blurRadius: 60,
+    return DialogCard(
+      padding: const EdgeInsets.fromLTRB(22, 28, 22, 22),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Paused',
+            style: AppText.title.copyWith(fontSize: 30),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 6),
+          Text(subtitle, style: AppText.body, textAlign: TextAlign.center),
+          const SizedBox(height: 20),
+          KeyButton(
+            tone: KeyTone.primary,
+            height: 62,
+            onPressed: () => choose(PauseChoice.resume),
+            child: const _Label(
+              icon: Icons.play_arrow_rounded,
+              text: 'Resume',
+              fontSize: 19,
+            ),
+          ),
+          const SizedBox(height: 10),
+          KeyButton(
+            tone: KeyTone.soft,
+            height: 56,
+            radius: 18,
+            onPressed: () => choose(PauseChoice.restart),
+            child: const _Label(
+              icon: Icons.restart_alt_rounded,
+              text: 'Restart level',
+              fontSize: 17,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: KeyButton(
+                  tone: KeyTone.soft,
+                  height: 56,
+                  radius: 18,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  onPressed: () => choose(PauseChoice.levels),
+                  child: const _Label(
+                    icon: Icons.grid_view_rounded,
+                    text: 'Levels',
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: KeyButton(
+                  tone: KeyTone.soft,
+                  height: 56,
+                  radius: 18,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  onPressed: () => choose(PauseChoice.home),
+                  child: const _Label(
+                    icon: Icons.home_outlined,
+                    text: 'Home',
+                    fontSize: 16,
+                  ),
+                ),
               ),
             ],
           ),
-          child: Material(
-            type: MaterialType.transparency,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(22, 28, 22, 22),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Paused',
-                    style: AppText.title.copyWith(fontSize: 30),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    subtitle,
-                    style: AppText.body,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  KeyButton(
-                    tone: KeyTone.primary,
-                    height: 62,
-                    onPressed: () => choose(PauseChoice.resume),
-                    child: const _Label(
-                      icon: Icons.play_arrow_rounded,
-                      text: 'Resume',
-                      fontSize: 19,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  KeyButton(
-                    tone: KeyTone.soft,
-                    height: 56,
-                    radius: 18,
-                    onPressed: () => choose(PauseChoice.restart),
-                    child: const _Label(
-                      icon: Icons.restart_alt_rounded,
-                      text: 'Restart level',
-                      fontSize: 17,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: KeyButton(
-                          tone: KeyTone.soft,
-                          height: 56,
-                          radius: 18,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          onPressed: () => choose(PauseChoice.levels),
-                          child: const _Label(
-                            icon: Icons.grid_view_rounded,
-                            text: 'Levels',
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: KeyButton(
-                          tone: KeyTone.soft,
-                          height: 56,
-                          radius: 18,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          onPressed: () => choose(PauseChoice.home),
-                          child: const _Label(
-                            icon: Icons.home_outlined,
-                            text: 'Home',
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20),
-                    child: Divider(height: 1, color: Palette.line),
-                  ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _ToggleKey(
-                          icon: settings.sound
-                              ? Icons.volume_up_outlined
-                              : Icons.volume_off_outlined,
-                          text: settings.sound ? 'Sound on' : 'Sound off',
-                          on: settings.sound,
-                          onPressed: () => settings.setSound(!settings.sound),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _ToggleKey(
-                          icon: settings.music
-                              ? Icons.music_note_rounded
-                              : Icons.music_off_rounded,
-                          text: settings.music ? 'Music on' : 'Music off',
-                          on: settings.music,
-                          onPressed: () => settings.setMusic(!settings.music),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _ToggleKey(
-                          icon: Icons.vibration_rounded,
-                          text: settings.vibration
-                              ? 'Vibration on'
-                              : 'Vibration off',
-                          on: settings.vibration,
-                          onPressed: () =>
-                              settings.setVibration(!settings.vibration),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: Divider(height: 1, color: Palette.line),
           ),
-        ),
+          Row(
+            children: [
+              Expanded(
+                child: _ToggleKey(
+                  icon: settings.sound
+                      ? Icons.volume_up_outlined
+                      : Icons.volume_off_outlined,
+                  text: settings.sound ? 'Sound on' : 'Sound off',
+                  on: settings.sound,
+                  onPressed: () => settings.setSound(!settings.sound),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _ToggleKey(
+                  icon: settings.music
+                      ? Icons.music_note_rounded
+                      : Icons.music_off_rounded,
+                  text: settings.music ? 'Music on' : 'Music off',
+                  on: settings.music,
+                  onPressed: () => settings.setMusic(!settings.music),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _ToggleKey(
+                  icon: Icons.vibration_rounded,
+                  text: settings.vibration ? 'Vibration on' : 'Vibration off',
+                  on: settings.vibration,
+                  onPressed: () => settings.setVibration(!settings.vibration),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

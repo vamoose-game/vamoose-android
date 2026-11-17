@@ -5,11 +5,12 @@ import 'package:vamoose/domain/level_codec.dart';
 void main() {
   const daily = DailyPuzzle();
 
-  test('builds a relaxed 5x5 board with 15 blocks', () {
+  test('builds a relaxed 6x6 board with 16 blocks and no locks', () {
     final board = daily.boardFor(DateTime(2026, 11, 15));
 
-    expect(board.size, 5);
-    expect(board.blockCount, 15);
+    expect(board.size, 6);
+    expect(board.blockCount, 16);
+    expect(board.restraints, isEmpty);
     expect(board.isSolvable, isTrue);
   });
 

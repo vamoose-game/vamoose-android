@@ -13,12 +13,16 @@ class BlockFace extends StatelessWidget {
     this.ringColor,
     this.ringWidth = 0,
     this.arrowSize,
+    this.stripes = 0,
+    this.arrowOpacity = 1,
   });
 
   final Direction direction;
   final Color? ringColor;
   final double ringWidth;
   final double? arrowSize;
+  final double stripes;
+  final double arrowOpacity;
 
   @override
   Widget build(BuildContext context) {
@@ -39,19 +43,59 @@ class BlockFace extends StatelessWidget {
                     strokeAlign: BorderSide.strokeAlignOutside,
                   ),
           ),
-          child: ShadedTile(
-            color: Palette.forDirection(direction),
-            radius: radius,
-            edge: (shortest * 0.1).clamp(3.0, 6.0),
-            child: ArrowGlyph(
-              direction: direction,
-              size: arrowSize ?? min(28, shortest * 0.52),
+          child: CustomPaint(
+            foregroundPainter: stripes > 0 ? _Stripes(radius, stripes) : null,
+            child: ShadedTile(
+              color: Palette.forDirection(direction),
+              radius: radius,
+              edge: (shortest * 0.1).clamp(3.0, 6.0),
+              child: _arrow(shortest),
             ),
           ),
         );
       },
     );
   }
+
+  Widget _arrow(double shortest) {
+    final arrow = ArrowGlyph(
+      direction: direction,
+      size: arrowSize ?? min(28, shortest * 0.52),
+    );
+    return arrowOpacity < 1
+        ? Opacity(opacity: arrowOpacity, child: arrow)
+        : arrow;
+  }
+}
+
+class _Stripes extends CustomPainter {
+  const _Stripes(this.radius, this.opacity);
+
+  static const double _band = 6;
+
+  final BorderRadius radius;
+  final double opacity;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.clipRRect(radius.toRRect(Offset.zero & size));
+    final paint = Paint()
+      ..color = Palette.white.withValues(alpha: 0.18 * opacity)
+      ..strokeWidth = _band;
+    final reach = size.width + size.height;
+    for (var offset = _band / 2; offset < reach; offset += _band * 2) {
+      final center = Offset(offset * sqrt1_2, offset * sqrt1_2);
+      canvas.drawLine(
+        center + Offset(-reach, reach),
+        center + Offset(reach, -reach),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_Stripes oldDelegate) =>
+      oldDelegate.radius != radius || oldDelegate.opacity != opacity;
 }
 
 class ShadedTile extends StatelessWidget {

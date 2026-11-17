@@ -6,6 +6,7 @@ import 'package:vamoose/domain/board.dart';
 import 'package:vamoose/services/sound_effects.dart';
 import 'package:vamoose/ui/game/board_view.dart';
 import 'package:vamoose/ui/game/game_mode.dart';
+import 'package:vamoose/ui/game/locks_intro.dart';
 import 'package:vamoose/ui/screens/game_screen.dart';
 import 'package:vamoose/ui/screens/level_complete_screen.dart';
 import 'package:vamoose/ui/theme/motion.dart';
@@ -142,9 +143,9 @@ void main() {
   });
 
   testWidgets('tapping a blocked block counts a bump', (tester) async {
-    final board = services.levels.byNumber(2).board;
+    final board = services.levels.byNumber(4).board;
     final blocked = board.blocks.firstWhere((block) => !board.canLeave(block));
-    await startGame(tester, services, const CampaignMode(2));
+    await startGame(tester, services, const CampaignMode(4));
 
     await tester.tapAndWait(blockFinder(blocked.id));
 
@@ -155,15 +156,15 @@ void main() {
   });
 
   testWidgets('bumps lower the stars on the result', (tester) async {
-    final board = services.levels.byNumber(2).board;
+    final board = services.levels.byNumber(4).board;
     final blocked = board.blocks.firstWhere((block) => !board.canLeave(block));
-    await startGame(tester, services, const CampaignMode(2));
+    await startGame(tester, services, const CampaignMode(4));
 
     await tester.tapAndWait(blockFinder(blocked.id));
     await solve(tester, board);
 
-    expect(find.text('Level 2 done with 1 bump.'), findsOneWidget);
-    expect(services.progress.starsFor(2), 2);
+    expect(find.text('Level 4 done with 1 bump.'), findsOneWidget);
+    expect(services.progress.starsFor(4), 2);
 
     await tester.close();
   });
@@ -268,6 +269,7 @@ void main() {
     tester,
   ) async {
     final order = solutionOrder(services.levels.byNumber(330).board);
+    await services.settings.markIntroSeen(LocksIntro.id);
     await startGame(tester, services, const CampaignMode(330));
 
     await tester.tap(blockFinder(order[0]));
@@ -287,6 +289,7 @@ void main() {
     tester,
   ) async {
     final board = services.levels.byNumber(330).board;
+    await services.settings.markIntroSeen(LocksIntro.id);
     await startGame(tester, services, const CampaignMode(330));
     var painted = 0;
     debugOnProfilePaint = (renderObject) {

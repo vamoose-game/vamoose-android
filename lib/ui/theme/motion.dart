@@ -7,6 +7,12 @@ abstract final class Motion {
   static const double flyInHorizontal = 460 / 336;
   static const double flyInVertical = 620 / 336;
   static const Duration resultsDelay = Duration(milliseconds: 550);
+  static const Duration badgeShake = Duration(milliseconds: 450);
+  static const Duration keyShakeDelay = Duration(milliseconds: 120);
+  static const Duration unlock = Duration(milliseconds: 700);
+  static const Duration unlockFadeDelay = Duration(milliseconds: 250);
+  static const Duration unlockFade = Duration(milliseconds: 300);
+  static const Duration locksDemo = Duration(milliseconds: 4800);
   static const Duration bump = Duration(milliseconds: 340);
   static const double bumpDistance = 10;
   static const Duration inTheWay = Duration(milliseconds: 900);

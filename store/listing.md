@@ -23,7 +23,8 @@ Vamoose is the calm block puzzle. Every block has an arrow. Tap it and it slides
 There are no timers and no lives. Every level can be solved, so you can never get stuck.
 
 • 360 levels in 12 chapters, from Warm-up to Zen
-• Boards grow from 5×5 to 8×8 as you play
+• Boards grow from 6×6 to 8×8 as you play
+• Locked blocks add a twist: clear the block with the key to open the lock
 • A new daily puzzle every day, with streaks
 • Hints show you a block that can go, plus one free hint every day
 • Calm background music and gentle sound effects

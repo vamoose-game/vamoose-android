@@ -13,6 +13,7 @@ import '../formatting.dart';
 import '../game/board_view.dart';
 import '../game/game_mode.dart';
 import '../game/level_result.dart';
+import '../game/locks_intro.dart';
 import '../game/out_of_hints_sheet.dart';
 import '../game/pause_dialog.dart';
 import '../navigation.dart';
@@ -46,6 +47,24 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _introduceLocks());
+  }
+
+  Future<void> _introduceLocks() async {
+    final settings = _services.settings;
+    if (!mounted ||
+        !LocksIntro.appliesTo(_session.board) ||
+        settings.hasSeenIntro(LocksIntro.id)) {
+      return;
+    }
+    _session.pause();
+    await LocksIntro.show(context, chapter: widget.mode.chapter);
+    await settings.markIntroSeen(LocksIntro.id);
+    if (!mounted) {
+      return;
+    }
+    setState(() => _round++);
+    _session.resume();
   }
 
   @override

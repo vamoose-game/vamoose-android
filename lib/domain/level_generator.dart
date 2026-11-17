@@ -4,21 +4,43 @@ import 'block.dart';
 import 'board.dart';
 import 'cell.dart';
 import 'direction.dart';
+import 'level_feature.dart';
 import 'level_spec.dart';
+import 'lock_feature.dart';
 
 class LevelGenerator {
-  const LevelGenerator();
+  const LevelGenerator({this.features = const [LockFeature()]});
 
   static const List<int> _lengthWeights = [0, 2, 5, 3];
+  static const int _attempts = 200;
+
+  final List<LevelFeature> features;
 
   Board generate(LevelSpec spec, Random random) {
     final cellCount = spec.size * spec.size;
     if (spec.blockCount < 1 || spec.blockCount > cellCount) {
       throw ArgumentError.value(spec.blockCount, 'blockCount');
     }
-    final tiles = _tile(spec.size, random);
-    _fitCount(tiles, spec.blockCount, random);
-    return _orient(spec, tiles, random);
+    for (var attempt = 0; attempt < _attempts; attempt++) {
+      final tiles = _tile(spec.size, random);
+      _fitCount(tiles, spec.blockCount, random);
+      final board = _addFeatures(_orient(spec, tiles, random), spec, random);
+      if (board != null) {
+        return board;
+      }
+    }
+    throw StateError('No board fits the level spec');
+  }
+
+  Board? _addFeatures(Board base, LevelSpec spec, Random random) {
+    Board? board = base;
+    for (final feature in features) {
+      if (board == null) {
+        return null;
+      }
+      board = feature.addTo(board, spec, random);
+    }
+    return board;
   }
 
   List<_Tile> _tile(int size, Random random) {

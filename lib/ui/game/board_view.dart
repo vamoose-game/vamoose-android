@@ -7,6 +7,7 @@ import '../../state/game_session.dart';
 import '../theme/motion.dart';
 import '../theme/palette.dart';
 import '../widgets/block_face.dart';
+import 'block_marks.dart';
 
 final Curve _fade = Interval(
   Motion.blockFadeDelay.inMilliseconds / Motion.blockLeaves.inMilliseconds,
@@ -31,6 +32,7 @@ class _BoardViewState extends State<BoardView>
   final List<_Leaving> _leaving = [];
   final Map<int, int> _bumps = {};
   final Map<int, int> _hits = {};
+  final Map<int, int> _shakes = {};
   final Map<int, (Object, Widget)> _slots = {};
   late final AnimationController _arrival = AnimationController(
     vsync: this,
@@ -60,15 +62,20 @@ class _BoardViewState extends State<BoardView>
     if (!_arrival.isCompleted) {
       return;
     }
+    final mark = BlockMarks.of(widget.session.board)[block.id];
     final outcome = widget.session.tap(block.id);
     setState(() {
       switch (outcome) {
         case BlockLeaves(:final travel):
-          _leaving.add(_Leaving(block, travel));
+          _leaving.add(_Leaving(block, travel, mark));
           _slots.remove(block.id);
-        case BlockBumps(:final blocker):
+        case BlockBumps(:final blocker, :final restraint):
           _bumps[block.id] = (_bumps[block.id] ?? 0) + 1;
           _hits[blocker.id] = (_hits[blocker.id] ?? 0) + 1;
+          if (restraint != null) {
+            _shakes[block.id] = (_shakes[block.id] ?? 0) + 1;
+            _shakes[blocker.id] = (_shakes[blocker.id] ?? 0) + 1;
+          }
       }
     });
     widget.onOutcome(outcome);
@@ -85,6 +92,7 @@ class _BoardViewState extends State<BoardView>
             final board = session.board;
             final cell = constraints.maxWidth / board.size;
             final hinted = session.hintedBlockId;
+            final marks = BlockMarks.of(board);
             return Stack(
               clipBehavior: Clip.none,
               children: [
@@ -101,8 +109,17 @@ class _BoardViewState extends State<BoardView>
                     path: board.blockById(hinted).pathWithin(board.size),
                     cell: cell,
                   ),
-                for (final block in board.blocks)
-                  _slot(block, cell, hinted: block.id == hinted),
+                for (final block in [
+                  ...board.blocks.where((block) => marks[block.id] == null),
+                  ...board.blocks.where((block) => marks[block.id] != null),
+                ])
+                  _slot(
+                    block,
+                    cell,
+                    hinted: block.id == hinted,
+                    mark: marks[block.id],
+                    locked: board.holdOn(block) != null,
+                  ),
                 for (final leaving in _leaving)
                   _place(
                     ObjectKey(leaving),
@@ -110,6 +127,7 @@ class _BoardViewState extends State<BoardView>
                     cell,
                     _LeavingBlock(
                       block: leaving.block,
+                      mark: leaving.mark,
                       distance:
                           (leaving.travel + leaving.block.length + 1) * cell,
                       onDone: () => setState(() => _leaving.remove(leaving)),
@@ -123,10 +141,17 @@ class _BoardViewState extends State<BoardView>
     );
   }
 
-  Widget _slot(Block block, double cell, {required bool hinted}) {
+  Widget _slot(
+    Block block,
+    double cell, {
+    required bool hinted,
+    required BlockMark? mark,
+    required bool locked,
+  }) {
     final bumps = _bumps[block.id] ?? 0;
     final hits = _hits[block.id] ?? 0;
-    final inputs = (cell, hinted, bumps, hits);
+    final shakes = _shakes[block.id] ?? 0;
+    final inputs = (cell, hinted, bumps, hits, shakes, mark, locked);
     final cached = _slots[block.id];
     if (cached != null && cached.$1 == inputs) {
       return cached.$2;
@@ -140,6 +165,9 @@ class _BoardViewState extends State<BoardView>
         hinted: hinted,
         bumpCount: bumps,
         hitCount: hits,
+        mark: mark,
+        locked: locked,
+        shakes: shakes,
         arrival: _flight,
         flyIn:
             cell *
@@ -197,10 +225,11 @@ class _WellsPainter extends CustomPainter {
 }
 
 class _Leaving {
-  _Leaving(this.block, this.travel);
+  _Leaving(this.block, this.travel, this.mark);
 
   final Block block;
   final int travel;
+  final BlockMark? mark;
 }
 
 class _PlayableBlock extends StatefulWidget {
@@ -209,6 +238,9 @@ class _PlayableBlock extends StatefulWidget {
     required this.hinted,
     required this.bumpCount,
     required this.hitCount,
+    required this.mark,
+    required this.locked,
+    required this.shakes,
     required this.arrival,
     required this.flyIn,
     required this.onTap,
@@ -218,6 +250,9 @@ class _PlayableBlock extends StatefulWidget {
   final bool hinted;
   final int bumpCount;
   final int hitCount;
+  final BlockMark? mark;
+  final bool locked;
+  final int shakes;
   final Animation<double> arrival;
   final double flyIn;
   final VoidCallback onTap;
@@ -270,7 +305,10 @@ class _PlayableBlockState extends State<_PlayableBlock>
   @override
   void didUpdateWidget(_PlayableBlock oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.hinted != oldWidget.hinted) {
+    if (widget.hinted != oldWidget.hinted ||
+        widget.mark != oldWidget.mark ||
+        widget.locked != oldWidget.locked ||
+        widget.shakes != oldWidget.shakes) {
       _restingFace = _resting();
     }
     if (widget.bumpCount != oldWidget.bumpCount) {
@@ -303,14 +341,25 @@ class _PlayableBlockState extends State<_PlayableBlock>
   Widget _resting() =>
       _face(ringColor: widget.hinted ? Palette.sun : null, ringWidth: 4);
 
-  Widget _face({required Color? ringColor, required double ringWidth}) =>
-      RepaintBoundary(
-        child: BlockFace(
-          direction: widget.block.direction,
-          ringColor: ringColor,
-          ringWidth: ringWidth,
-        ),
-      );
+  Widget _face({required Color? ringColor, required double ringWidth}) {
+    final mark = widget.mark;
+    return RepaintBoundary(
+      child: mark == null
+          ? BlockFace(
+              direction: widget.block.direction,
+              ringColor: ringColor,
+              ringWidth: ringWidth,
+            )
+          : MarkedFace(
+              direction: widget.block.direction,
+              mark: mark,
+              locked: widget.locked,
+              shakes: widget.shakes,
+              ringColor: ringColor,
+              ringWidth: ringWidth,
+            ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -318,7 +367,10 @@ class _PlayableBlockState extends State<_PlayableBlock>
     return Semantics(
       button: true,
       label:
-          '${direction.name} block${widget.hinted ? ', hint: this one can go' : ''}',
+          '${direction.name} block'
+          '${widget.locked ? ', locked: clear the block with the key first' : ''}'
+          '${widget.mark?.role == MarkRole.key ? ', carries a key' : ''}'
+          '${widget.hinted ? ', hint: this one can go' : ''}',
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: widget.onTap,
@@ -365,11 +417,13 @@ class _PlayableBlockState extends State<_PlayableBlock>
 class _LeavingBlock extends StatefulWidget {
   const _LeavingBlock({
     required this.block,
+    required this.mark,
     required this.distance,
     required this.onDone,
   });
 
   final Block block;
+  final BlockMark? mark;
   final double distance;
   final VoidCallback onDone;
 
@@ -420,7 +474,17 @@ class _LeavingBlockState extends State<_LeavingBlock>
             ),
           );
         },
-        child: RepaintBoundary(child: BlockFace(direction: direction)),
+        child: RepaintBoundary(
+          child: switch (widget.mark) {
+            final mark? => MarkedFace(
+              direction: direction,
+              mark: mark,
+              locked: false,
+              shakes: 0,
+            ),
+            null => BlockFace(direction: direction),
+          },
+        ),
       ),
     );
   }

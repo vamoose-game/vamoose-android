@@ -24,6 +24,7 @@ import '../state/daily_controller.dart';
 import '../state/hint_wallet.dart';
 import '../state/progress_controller.dart';
 import '../state/settings_controller.dart';
+import '../state/streak_controller.dart';
 
 class AppServices {
   const AppServices({
@@ -32,6 +33,7 @@ class AppServices {
     required this.progress,
     required this.hints,
     required this.coins,
+    required this.streak,
     required this.daily,
     required this.dailyPuzzle,
     required this.feedback,
@@ -48,6 +50,7 @@ class AppServices {
   final ProgressController progress;
   final HintWallet hints;
   final CoinWallet coins;
+  final StreakController streak;
   final DailyController daily;
   final DailyPuzzle dailyPuzzle;
   final GameFeedback feedback;
@@ -63,15 +66,17 @@ class AppServices {
     final store = SharedPreferencesStore(await SharedPreferences.getInstance());
     final levels = await LevelCatalog.load(rootBundle);
     final settings = SettingsController(store);
-    final hints = HintWallet(store, clock);
-    await hints.claimDailyHint();
+    final coins = CoinWallet(store);
+    final streak = StreakController(store, clock, coins);
+    await streak.refresh();
     final adFree = AdFreeController(store);
     return AppServices(
       levels: levels,
       settings: settings,
       progress: ProgressController(store, levelCount: levels.count),
-      hints: hints,
-      coins: CoinWallet(store),
+      hints: HintWallet(store),
+      coins: coins,
+      streak: streak,
       daily: DailyController(store, clock),
       dailyPuzzle: const DailyPuzzle(),
       feedback: GameFeedback(

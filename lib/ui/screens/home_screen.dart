@@ -2,8 +2,8 @@ import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../domain/direction.dart';
-import '../../state/daily_controller.dart';
 import '../../state/progress_controller.dart';
+import '../../state/streak_controller.dart';
 import '../game/game_mode.dart';
 import '../navigation.dart';
 import '../theme/app_text.dart';
@@ -27,7 +27,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final progress = context.watch<ProgressController>();
-    final daily = context.watch<DailyController>();
+    final streak = context.watch<StreakController>();
     final level = progress.currentLevel;
     return Scaffold(
       body: SafeArea(
@@ -148,20 +148,20 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _MenuCard(
-                      icon: Icons.calendar_today_outlined,
+                      icon: Icons.local_fire_department_rounded,
                       color: Palette.alert,
                       tint: Palette.orangeTint,
-                      title: 'Daily puzzle',
-                      detailIcon: const Icon(
-                        Icons.local_fire_department_outlined,
-                        color: Palette.alert,
-                        size: 16,
-                      ),
-                      detail: daily.currentStreak > 0
-                          ? '${daily.currentStreak}-day streak'
-                          : (daily.isTodayCompleted
-                                ? 'Solved today'
-                                : 'New today'),
+                      title: 'Daily streak',
+                      detailIcon: streak.canCollect
+                          ? const CoinGlyph(size: 16)
+                          : const Icon(
+                              Icons.local_fire_department_outlined,
+                              color: Palette.alert,
+                              size: 16,
+                            ),
+                      detail: streak.canCollect
+                          ? '+${streak.reward} waiting'
+                          : '${streak.count}-day streak',
                       onPressed: () =>
                           Navigator.of(context)
                               .push(Navigation.page<void>(const DailyScreen())),

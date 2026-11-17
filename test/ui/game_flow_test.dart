@@ -51,6 +51,7 @@ void main() {
     expect(find.text('Level 1 done. No bumps at all.'), findsOneWidget);
     expect(services.progress.starsFor(1), 3);
     expect(services.progress.currentLevel, 2);
+    expect(services.coins.balance, 125);
 
     await tester.close();
   });
@@ -155,6 +156,23 @@ void main() {
     await tester.close();
   });
 
+  testWidgets('replays only pay for better stars', (tester) async {
+    final board = services.levels.byNumber(4).board;
+    final blocked = board.blocks.firstWhere((block) => !board.canLeave(block));
+    await startGame(tester, services, const CampaignMode(4));
+    await tester.tapAndWait(blockFinder(blocked.id));
+    await solve(tester, board);
+    expect(services.coins.balance, 120);
+    await tester.close();
+
+    for (final expected in [125, 125]) {
+      await startGame(tester, services, const CampaignMode(4));
+      await solve(tester, board);
+      expect(services.coins.balance, expected);
+      await tester.close();
+    }
+  });
+
   testWidgets('bumps lower the stars on the result', (tester) async {
     final board = services.levels.byNumber(4).board;
     final blocked = board.blocks.firstWhere((block) => !board.canLeave(block));
@@ -199,11 +217,11 @@ void main() {
 
     expect(find.text('Hint'), findsNothing);
     await tester.tapAndWait(find.text('Get hint'));
-    expect(find.text('Out of hints'), findsOneWidget);
-    expect(find.text('Watch video · +1 hint'), findsOneWidget);
+    expect(find.text('Need a hint?'), findsOneWidget);
+    expect(find.text('Watch a short video: free hint'), findsOneWidget);
 
     await tester.tapAndWait(find.text('Not now'));
-    expect(find.text('Out of hints'), findsNothing);
+    expect(find.text('Need a hint?'), findsNothing);
 
     await tester.close();
   });
@@ -228,7 +246,7 @@ void main() {
     await tester.close();
   });
 
-  testWidgets('daily puzzle rewards a hint once', (tester) async {
+  testWidgets('daily puzzle rewards coins once', (tester) async {
     final today = services.daily.today;
     await startGame(tester, services, DailyMode(today));
 
@@ -236,7 +254,8 @@ void main() {
 
     expect(find.text('Board clear!'), findsOneWidget);
     expect(services.daily.isTodayCompleted, isTrue);
-    expect(services.hints.count, 4);
+    expect(services.coins.balance, 150);
+    expect(services.hints.count, 3);
 
     await tester.close();
   });

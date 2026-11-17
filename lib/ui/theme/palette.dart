@@ -22,7 +22,10 @@ abstract final class Palette {
   static const Color lockedText = Color(0xFF5E6888);
   static const Color sunEdge = Color(0xFFD99A12);
   static const Color starStroke = Color(0xFFC98A00);
+  static const Color coinRing = Color(0xFFE0A21C);
   static const Color cream = Color(0xFFFFF4D6);
+  static const Color mint = Color(0xFFE6F6F2);
+  static const Color mintText = Color(0xFF0B7A6A);
   static const Color creamEdge = Color(0xFFF2D98E);
   static const Color blueTint = Color(0xFFE6ECFE);
   static const Color orangeTint = Color(0xFFFDE9E4);

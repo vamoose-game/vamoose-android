@@ -29,7 +29,7 @@ void main() {
     await tester.wait(const Duration(milliseconds: 3000));
 
     expect(find.text('How to play'), findsNothing);
-    expect(find.text('3 hints'), findsOneWidget);
+    expect(find.text('100'), findsOneWidget);
     expect(find.text('Level 1'), findsOneWidget);
 
     await tester.close();

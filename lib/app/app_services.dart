@@ -19,6 +19,7 @@ import '../services/purchases/play_billing_gateway.dart';
 import '../services/purchases/play_purchase_service.dart';
 import '../services/purchases/purchase_service.dart';
 import '../state/ad_free_controller.dart';
+import '../state/coin_wallet.dart';
 import '../state/daily_controller.dart';
 import '../state/hint_wallet.dart';
 import '../state/progress_controller.dart';
@@ -30,6 +31,7 @@ class AppServices {
     required this.settings,
     required this.progress,
     required this.hints,
+    required this.coins,
     required this.daily,
     required this.dailyPuzzle,
     required this.feedback,
@@ -45,6 +47,7 @@ class AppServices {
   final SettingsController settings;
   final ProgressController progress;
   final HintWallet hints;
+  final CoinWallet coins;
   final DailyController daily;
   final DailyPuzzle dailyPuzzle;
   final GameFeedback feedback;
@@ -68,6 +71,7 @@ class AppServices {
       settings: settings,
       progress: ProgressController(store, levelCount: levels.count),
       hints: hints,
+      coins: CoinWallet(store),
       daily: DailyController(store, clock),
       dailyPuzzle: const DailyPuzzle(),
       feedback: GameFeedback(

@@ -4,7 +4,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/app_services.dart';
+import '../../domain/economy.dart';
 import '../../domain/tap_outcome.dart';
+import '../../state/coin_wallet.dart';
 import '../../state/daily_controller.dart';
 import '../../state/game_session.dart';
 import '../../state/hint_wallet.dart';
@@ -14,7 +16,7 @@ import '../game/board_view.dart';
 import '../game/game_mode.dart';
 import '../game/level_result.dart';
 import '../game/locks_intro.dart';
-import '../game/out_of_hints_sheet.dart';
+import '../game/hint_sheet.dart';
 import '../game/pause_dialog.dart';
 import '../navigation.dart';
 import '../theme/app_text.dart';
@@ -100,28 +102,30 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     final opening = Future<void>.delayed(Motion.resultsDelay);
     final progress = context.read<ProgressController>();
     final daily = context.read<DailyController>();
-    final hints = context.read<HintWallet>();
-    var earnedHint = false;
+    final coins = context.read<CoinWallet>();
+    final earned = switch (widget.mode) {
+      CampaignMode(:final level) => Economy.levelReward(
+        bestBefore: progress.starsFor(level),
+        stars: _session.stars,
+      ),
+      DailyMode() => daily.isTodayCompleted ? 0 : Economy.dailyPuzzleReward,
+    };
     switch (widget.mode) {
       case CampaignMode(:final level):
         await progress.record(level, _session.stars);
       case DailyMode():
-        earnedHint = await daily.completeToday();
-        if (earnedHint) {
-          await hints.add(1);
-        }
+        await daily.completeToday();
     }
+    await coins.earn(earned);
     if (!mounted) {
       return;
     }
     _services.feedback.boardCleared();
     final result = LevelResult(
       mode: widget.mode,
-      blocks: _session.totalBlocks,
       bumps: _session.bumps,
-      time: _session.elapsed,
       stars: _session.stars,
-      earnedHint: earnedHint,
+      coins: earned,
     );
     await opening;
     if (!mounted || !_session.isCleared) {
@@ -138,12 +142,13 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     if (_session.hasActiveHint || _session.isCleared) {
       return;
     }
-    final wallet = context.read<HintWallet>();
-    if (await wallet.spend()) {
+    final hasHint = await context.read<HintWallet>().spend();
+    if (!mounted) {
+      return;
+    }
+    if (hasHint || await HintSheet.show(context)) {
       _session.revealHint();
       _services.feedback.hintShown();
-    } else if (mounted) {
-      await OutOfHintsSheet.show(context);
     }
   }
 
@@ -232,7 +237,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                       onPressed: _hint,
                       semanticLabel: hints > 0
                           ? 'Use a hint, $hints left'
-                          : 'Get a hint by watching a short ad',
+                          : 'Get a hint with coins or a short video',
                       child: hints > 0
                           ? _ButtonLabel(
                               icon: Icons.lightbulb_outline_rounded,
@@ -240,7 +245,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                               trailing: _CountBadge(count: hints),
                             )
                           : const _ButtonLabel(
-                              icon: Icons.videocam_outlined,
+                              icon: Icons.lightbulb_outline_rounded,
                               text: 'Get hint',
                             ),
                     ),

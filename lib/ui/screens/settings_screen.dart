@@ -5,6 +5,7 @@ import '../../app/app_info.dart';
 import '../../app/app_services.dart';
 import '../../services/purchases/purchase_service.dart';
 import '../../state/ad_free_controller.dart';
+import '../../state/coin_wallet.dart';
 import '../../state/daily_controller.dart';
 import '../../state/progress_controller.dart';
 import '../../state/settings_controller.dart';
@@ -23,13 +24,14 @@ class SettingsScreen extends StatelessWidget {
   Future<void> _confirmReset(BuildContext context) async {
     final progress = context.read<ProgressController>();
     final daily = context.read<DailyController>();
+    final coins = context.read<CoinWallet>();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Palette.white,
         title: const Text('Reset progress?', style: AppText.heading),
         content: const Text(
-          'Stars, unlocked levels and your daily streak will be cleared.',
+          'Stars, unlocked levels, coins and your daily streak will be cleared.',
           style: AppText.body,
         ),
         actions: [
@@ -53,6 +55,7 @@ class SettingsScreen extends StatelessWidget {
     if (confirmed ?? false) {
       await progress.reset();
       await daily.reset();
+      await coins.reset();
     }
   }
 

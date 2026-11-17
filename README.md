@@ -47,7 +47,7 @@ flutter test
 | Consent | First launch | Google UMP form before any ad loads; Settings › Ad privacy choices reopens it |
 | Banner | Levels, Game | Adaptive, at the bottom; gone after Remove ads |
 | Interstitial | After Next level | Every 3rd cleared level, never before level 10, 2 minutes apart; gone after Remove ads |
-| Rewarded | Out of hints, Board clear | +1 hint, given only when the video reward is earned |
+| Rewarded | Out of hints, Level complete | +1 hint, given only when the video reward is earned |
 | Remove ads | Settings | One-time product `remove_ads`; Restore purchase brings it back |
 
 

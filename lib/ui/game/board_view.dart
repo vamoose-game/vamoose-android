@@ -8,6 +8,12 @@ import '../theme/motion.dart';
 import '../theme/palette.dart';
 import '../widgets/block_face.dart';
 
+final Curve _fade = Interval(
+  Motion.blockFadeDelay.inMilliseconds / Motion.blockLeaves.inMilliseconds,
+  1,
+  curve: Curves.easeIn,
+);
+
 class BoardView extends StatefulWidget {
   const BoardView({super.key, required this.session, required this.onOutcome});
 
@@ -18,15 +24,42 @@ class BoardView extends StatefulWidget {
   State<BoardView> createState() => _BoardViewState();
 }
 
-class _BoardViewState extends State<BoardView> {
+class _BoardViewState extends State<BoardView>
+    with SingleTickerProviderStateMixin {
   static const double _gap = 3;
 
   final List<_Leaving> _leaving = [];
   final Map<int, int> _bumps = {};
   final Map<int, int> _hits = {};
   final Map<int, (Object, Widget)> _slots = {};
+  late final AnimationController _arrival = AnimationController(
+    vsync: this,
+    duration: Motion.flyInDelay + Motion.blockLeaves,
+  );
+  late final Animation<double> _flight = CurvedAnimation(
+    parent: _arrival,
+    curve: Interval(
+      Motion.flyInDelay.inMilliseconds / _arrival.duration!.inMilliseconds,
+      1,
+    ),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _arrival.forward();
+  }
+
+  @override
+  void dispose() {
+    _arrival.dispose();
+    super.dispose();
+  }
 
   void _tap(Block block) {
+    if (!_arrival.isCompleted) {
+      return;
+    }
     final outcome = widget.session.tap(block.id);
     setState(() {
       switch (outcome) {
@@ -107,6 +140,11 @@ class _BoardViewState extends State<BoardView> {
         hinted: hinted,
         bumpCount: bumps,
         hitCount: hits,
+        arrival: _flight,
+        flyIn:
+            cell *
+            widget.session.board.size *
+            (block.isVertical ? Motion.flyInVertical : Motion.flyInHorizontal),
         onTap: () => _tap(block),
       ),
     );
@@ -171,6 +209,8 @@ class _PlayableBlock extends StatefulWidget {
     required this.hinted,
     required this.bumpCount,
     required this.hitCount,
+    required this.arrival,
+    required this.flyIn,
     required this.onTap,
   });
 
@@ -178,6 +218,8 @@ class _PlayableBlock extends StatefulWidget {
   final bool hinted;
   final int bumpCount;
   final int hitCount;
+  final Animation<double> arrival;
+  final double flyIn;
   final VoidCallback onTap;
 
   @override
@@ -211,7 +253,12 @@ class _PlayableBlockState extends State<_PlayableBlock>
     vsync: this,
     duration: Motion.hintPulse,
   );
-  late final Listenable _motion = Listenable.merge([_bump, _hit, _pulse]);
+  late final Listenable _motion = Listenable.merge([
+    _bump,
+    _hit,
+    _pulse,
+    widget.arrival,
+  ]);
   late Widget _restingFace = _resting();
 
   @override
@@ -279,28 +326,33 @@ class _PlayableBlockState extends State<_PlayableBlock>
           animation: _motion,
           child: _restingFace,
           builder: (context, restingFace) {
-            final nudge =
+            final arrival = widget.arrival.value;
+            final travel =
                 _bumpPath.transform(Curves.easeOut.transform(_bump.value)) *
-                Motion.bumpDistance;
+                    Motion.bumpDistance +
+                (1 - Motion.leaveCurve.transform(arrival)) * widget.flyIn;
             final scale =
                 1 +
                 (Motion.hintScale - 1) *
                     Curves.easeInOut.transform(_pulse.value);
-            return Transform.translate(
-              offset: Offset(
-                direction.columnStep * nudge,
-                direction.rowStep * nudge,
-              ),
-              child: Transform.scale(
-                scale: scale,
-                child: _hit.isAnimating
-                    ? _face(
-                        ringColor: Palette.ink,
-                        ringWidth: _ringPath.transform(
-                          Curves.easeOut.transform(_hit.value),
-                        ),
-                      )
-                    : restingFace,
+            return Opacity(
+              opacity: _fade.transform(arrival),
+              child: Transform.translate(
+                offset: Offset(
+                  direction.columnStep * travel,
+                  direction.rowStep * travel,
+                ),
+                child: Transform.scale(
+                  scale: scale,
+                  child: _hit.isAnimating
+                      ? _face(
+                          ringColor: Palette.ink,
+                          ringWidth: _ringPath.transform(
+                            Curves.easeOut.transform(_hit.value),
+                          ),
+                        )
+                      : restingFace,
+                ),
               ),
             );
           },
@@ -327,12 +379,6 @@ class _LeavingBlock extends StatefulWidget {
 
 class _LeavingBlockState extends State<_LeavingBlock>
     with SingleTickerProviderStateMixin {
-  static final Curve _fade = Interval(
-    Motion.blockFadeDelay.inMilliseconds / Motion.blockLeaves.inMilliseconds,
-    1,
-    curve: Curves.easeIn,
-  );
-
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: Motion.blockLeaves,

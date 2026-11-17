@@ -10,7 +10,6 @@ import '../../state/game_session.dart';
 import '../../state/hint_wallet.dart';
 import '../../state/progress_controller.dart';
 import '../formatting.dart';
-import '../game/board_clear_overlay.dart';
 import '../game/board_view.dart';
 import '../game/game_mode.dart';
 import '../game/level_result.dart';
@@ -18,6 +17,7 @@ import '../game/out_of_hints_sheet.dart';
 import '../game/pause_dialog.dart';
 import '../navigation.dart';
 import '../theme/app_text.dart';
+import '../theme/motion.dart';
 import '../theme/palette.dart';
 import '../widgets/ad_banner_slot.dart';
 import '../widgets/key_button.dart';
@@ -41,7 +41,6 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     widget.mode.boardFrom(_services),
   );
   int _round = 0;
-  LevelResult? _result;
 
   @override
   void initState() {
@@ -79,6 +78,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _finish() async {
+    final opening = Future<void>.delayed(Motion.resultsDelay);
     final progress = context.read<ProgressController>();
     final daily = context.read<DailyController>();
     final hints = context.read<HintWallet>();
@@ -96,27 +96,23 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       return;
     }
     _services.feedback.boardCleared();
-    setState(
-      () => _result = LevelResult(
-        mode: widget.mode,
-        blocks: _session.totalBlocks,
-        bumps: _session.bumps,
-        time: _session.elapsed,
-        stars: _session.stars,
-        earnedHint: earnedHint,
+    final result = LevelResult(
+      mode: widget.mode,
+      blocks: _session.totalBlocks,
+      bumps: _session.bumps,
+      time: _session.elapsed,
+      stars: _session.stars,
+      earnedHint: earnedHint,
+    );
+    await opening;
+    if (!mounted || !_session.isCleared) {
+      return;
+    }
+    unawaited(
+      Navigator.of(context).pushReplacement(
+        Navigation.page<void>(LevelCompleteScreen(result: result)),
       ),
     );
-  }
-
-  void _seeResults() {
-    final result = _result;
-    if (result != null) {
-      unawaited(
-        Navigator.of(context).pushReplacement(
-          Navigation.page<void>(LevelCompleteScreen(result: result)),
-        ),
-      );
-    }
   }
 
   Future<void> _hint() async {
@@ -133,14 +129,14 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   }
 
   void _restart() {
-    setState(() {
-      _round++;
-      _result = null;
-    });
+    setState(() => _round++);
     _session.restart();
   }
 
   Future<void> _pause() async {
+    if (_session.isCleared) {
+      return;
+    }
     _session.pause();
     final choice = await PauseDialog.show(
       context,
@@ -186,23 +182,13 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                       radius: 28,
                       raised: true,
                       padding: const EdgeInsets.all(13),
-                      child: Stack(
-                        children: [
-                          ListenableBuilder(
-                            listenable: _session,
-                            builder: (context, _) => BoardView(
-                              key: ValueKey(_round),
-                              session: _session,
-                              onOutcome: _onOutcome,
-                            ),
-                          ),
-                          if (_result != null)
-                            Positioned.fill(
-                              child: BoardClearOverlay(
-                                onSeeResults: _seeResults,
-                              ),
-                            ),
-                        ],
+                      child: ListenableBuilder(
+                        listenable: _session,
+                        builder: (context, _) => BoardView(
+                          key: ValueKey(_round),
+                          session: _session,
+                          onOutcome: _onOutcome,
+                        ),
                       ),
                     ),
                   ),

@@ -3,6 +3,10 @@ import 'package:flutter/animation.dart';
 abstract final class Motion {
   static const Duration blockLeaves = Duration(milliseconds: 520);
   static const Duration blockFadeDelay = Duration(milliseconds: 200);
+  static const Duration flyInDelay = Duration(milliseconds: 300);
+  static const double flyInHorizontal = 460 / 336;
+  static const double flyInVertical = 620 / 336;
+  static const Duration resultsDelay = Duration(milliseconds: 550);
   static const Duration bump = Duration(milliseconds: 340);
   static const double bumpDistance = 10;
   static const Duration inTheWay = Duration(milliseconds: 900);

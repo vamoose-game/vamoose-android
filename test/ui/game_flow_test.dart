@@ -7,25 +7,32 @@ import 'package:vamoose/services/sound_effects.dart';
 import 'package:vamoose/ui/game/board_view.dart';
 import 'package:vamoose/ui/game/game_mode.dart';
 import 'package:vamoose/ui/screens/game_screen.dart';
+import 'package:vamoose/ui/screens/level_complete_screen.dart';
+import 'package:vamoose/ui/theme/motion.dart';
+import 'package:vamoose/ui/widgets/block_face.dart';
 
 import '../support/boards.dart';
 import '../support/pumping.dart';
 import '../support/test_services.dart';
 
+final Duration landing = Motion.flyInDelay + Motion.blockLeaves;
+
 Finder blockFinder(int id) => find.byKey(ValueKey('block-$id'));
+
+Future<void> startGame(
+  WidgetTester tester,
+  AppServices services,
+  GameMode mode,
+) async {
+  await tester.launch(services, home: GameScreen(mode: mode));
+  await tester.wait(landing);
+}
 
 Future<void> solve(WidgetTester tester, Board board) async {
   for (final id in solutionOrder(board)) {
     await tester.tapAndWait(blockFinder(id));
   }
   await tester.wait(const Duration(milliseconds: 1400));
-}
-
-Future<void> seeResults(WidgetTester tester) async {
-  await tester.tapAndWait(
-    find.text('See results'),
-    const Duration(milliseconds: 1600),
-  );
 }
 
 void main() {
@@ -36,18 +43,10 @@ void main() {
   testWidgets('clearing a level without bumps earns three stars', (
     tester,
   ) async {
-    await tester.launch(
-      services,
-      home: const GameScreen(mode: CampaignMode(1)),
-    );
+    await startGame(tester, services, const CampaignMode(1));
 
     await solve(tester, services.levels.byNumber(1).board);
 
-    expect(find.text('Board clear!'), findsOneWidget);
-    expect(find.text('See results'), findsOneWidget);
-    expect(services.progress.starsFor(1), 3);
-
-    await seeResults(tester);
     expect(find.text('Level 1 done. No bumps at all.'), findsOneWidget);
     expect(services.progress.starsFor(1), 3);
     expect(services.progress.currentLevel, 2);
@@ -55,13 +54,97 @@ void main() {
     await tester.close();
   });
 
-  testWidgets('tapping a blocked block counts a bump', (tester) async {
-    final board = services.levels.byNumber(2).board;
-    final blocked = board.blocks.firstWhere((block) => !board.canLeave(block));
+  testWidgets('blocks fly in from the side their arrow points to', (
+    tester,
+  ) async {
+    final block = services.levels.byNumber(2).board.blocks.first;
     await tester.launch(
       services,
       home: const GameScreen(mode: CampaignMode(2)),
     );
+    final face = find.descendant(
+      of: blockFinder(block.id),
+      matching: find.byType(BlockFace),
+    );
+    final start = tester.getCenter(face);
+
+    await tester.wait(landing);
+    final away = start - tester.getCenter(face);
+
+    expect(
+      away.distance,
+      greaterThan(tester.getSize(find.byType(BoardView)).width),
+    );
+    expect(away.dx.sign, block.direction.columnStep);
+    expect(away.dy.sign, block.direction.rowStep);
+
+    await tester.close();
+  });
+
+  testWidgets('blocks can be tapped once they have landed', (tester) async {
+    final board = services.levels.byNumber(1).board;
+    final free = board.blocks.firstWhere(board.canLeave);
+    await tester.launch(
+      services,
+      home: const GameScreen(mode: CampaignMode(1)),
+    );
+
+    await tester.tap(blockFinder(free.id), warnIfMissed: false);
+    await tester.pump();
+    expect(blockFinder(free.id), findsOneWidget);
+
+    await tester.wait(landing);
+    await tester.tap(blockFinder(free.id));
+    await tester.pump();
+    expect(blockFinder(free.id), findsNothing);
+
+    await tester.close();
+  });
+
+  testWidgets('results open by themselves as the last block leaves', (
+    tester,
+  ) async {
+    final order = solutionOrder(services.levels.byNumber(1).board);
+    await startGame(tester, services, const CampaignMode(1));
+
+    for (final id in order.take(order.length - 1)) {
+      await tester.tapAndWait(blockFinder(id));
+    }
+    await tester.tap(blockFinder(order.last));
+    await tester.wait(const Duration(milliseconds: 500));
+    expect(find.byType(LevelCompleteScreen), findsNothing);
+    expect(find.text('See results'), findsNothing);
+
+    await tester.wait(const Duration(seconds: 1));
+    expect(find.byType(LevelCompleteScreen), findsOneWidget);
+    expect(find.byType(GameScreen), findsNothing);
+
+    await tester.close();
+  });
+
+  testWidgets('restart right after the last block stays on the board', (
+    tester,
+  ) async {
+    final order = solutionOrder(services.levels.byNumber(1).board);
+    await startGame(tester, services, const CampaignMode(1));
+
+    for (final id in order.take(order.length - 1)) {
+      await tester.tapAndWait(blockFinder(id));
+    }
+    await tester.tap(blockFinder(order.last));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.tapAndWait(find.text('Restart'), const Duration(seconds: 2));
+
+    expect(find.byType(LevelCompleteScreen), findsNothing);
+    expect(blockFinder(order.first), findsOneWidget);
+
+    await tester.close();
+  });
+
+  testWidgets('tapping a blocked block counts a bump', (tester) async {
+    final board = services.levels.byNumber(2).board;
+    final blocked = board.blocks.firstWhere((block) => !board.canLeave(block));
+    await startGame(tester, services, const CampaignMode(2));
 
     await tester.tapAndWait(blockFinder(blocked.id));
 
@@ -74,14 +157,10 @@ void main() {
   testWidgets('bumps lower the stars on the result', (tester) async {
     final board = services.levels.byNumber(2).board;
     final blocked = board.blocks.firstWhere((block) => !board.canLeave(block));
-    await tester.launch(
-      services,
-      home: const GameScreen(mode: CampaignMode(2)),
-    );
+    await startGame(tester, services, const CampaignMode(2));
 
     await tester.tapAndWait(blockFinder(blocked.id));
     await solve(tester, board);
-    await seeResults(tester);
 
     expect(find.text('Level 2 done with 1 bump.'), findsOneWidget);
     expect(services.progress.starsFor(2), 2);
@@ -93,10 +172,7 @@ void main() {
     tester,
   ) async {
     final board = services.levels.byNumber(30).board;
-    await tester.launch(
-      services,
-      home: const GameScreen(mode: CampaignMode(30)),
-    );
+    await startGame(tester, services, const CampaignMode(30));
 
     await tester.tapAndWait(find.text('Hint'));
     expect(services.hints.count, 2);
@@ -153,10 +229,9 @@ void main() {
 
   testWidgets('daily puzzle rewards a hint once', (tester) async {
     final today = services.daily.today;
-    await tester.launch(services, home: GameScreen(mode: DailyMode(today)));
+    await startGame(tester, services, DailyMode(today));
 
     await solve(tester, services.dailyPuzzle.boardFor(today));
-    await seeResults(tester);
 
     expect(find.text('Board clear!'), findsOneWidget);
     expect(services.daily.isTodayCompleted, isTrue);
@@ -169,10 +244,11 @@ void main() {
     final sounds = RecordingSounds();
     services = buildTestServices(sounds: sounds);
     final board = services.levels.byNumber(1).board;
-    await tester.launch(
-      services,
-      home: const GameScreen(mode: CampaignMode(1)),
-    );
+    await startGame(tester, services, const CampaignMode(1));
+
+    await tester.tapAndWait(find.text('Restart'), const Duration(seconds: 1));
+    expect(sounds.played.first, (Sound.tap, 0));
+    sounds.played.clear();
 
     final order = solutionOrder(board);
     for (final id in order) {
@@ -185,11 +261,6 @@ void main() {
       [for (var index = 0; index < order.length; index++) index],
     );
 
-    await tester.wait(const Duration(milliseconds: 1400));
-    sounds.played.clear();
-    await tester.tapAndWait(find.text('See results'));
-    expect(sounds.played.first, (Sound.tap, 0));
-
     await tester.close();
   });
 
@@ -197,10 +268,7 @@ void main() {
     tester,
   ) async {
     final order = solutionOrder(services.levels.byNumber(330).board);
-    await tester.launch(
-      services,
-      home: const GameScreen(mode: CampaignMode(330)),
-    );
+    await startGame(tester, services, const CampaignMode(330));
 
     await tester.tap(blockFinder(order[0]));
     await tester.pump();
@@ -219,10 +287,7 @@ void main() {
     tester,
   ) async {
     final board = services.levels.byNumber(330).board;
-    await tester.launch(
-      services,
-      home: const GameScreen(mode: CampaignMode(330)),
-    );
+    await startGame(tester, services, const CampaignMode(330));
     var painted = 0;
     debugOnProfilePaint = (renderObject) {
       if (renderObject is RenderCustomPaint) {
@@ -244,7 +309,13 @@ void main() {
 
 List<double> leavingOpacities(WidgetTester tester) => [
   for (final opacity in tester.widgetList<Opacity>(
-    find.descendant(of: find.byType(BoardView), matching: find.byType(Opacity)),
+    find.descendant(
+      of: find.descendant(
+        of: find.byType(BoardView),
+        matching: find.byType(IgnorePointer),
+      ),
+      matching: find.byType(Opacity),
+    ),
   ))
     opacity.opacity,
 ];

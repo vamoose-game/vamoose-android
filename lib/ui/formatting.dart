@@ -43,6 +43,10 @@ abstract final class Formatting {
   static String countdown(Duration duration) =>
       '${_two(duration.inHours)}:${_two(duration.inMinutes % 60)}:${_two(duration.inSeconds % 60)}';
 
+  static String grouped(int value) => value.abs() < 1000
+      ? '$value'
+      : '${value < 0 ? '-' : ''}${grouped(value.abs() ~/ 1000)},${(value.abs() % 1000).toString().padLeft(3, '0')}';
+
   static String plural(int count, String noun) =>
       '$count $noun${count == 1 ? '' : 's'}';
 

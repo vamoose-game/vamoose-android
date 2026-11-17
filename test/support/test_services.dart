@@ -15,6 +15,7 @@ import 'package:vamoose/services/music_player.dart';
 import 'package:vamoose/services/purchases/purchase_service.dart';
 import 'package:vamoose/services/sound_effects.dart';
 import 'package:vamoose/state/ad_free_controller.dart';
+import 'package:vamoose/state/coin_wallet.dart';
 import 'package:vamoose/state/daily_controller.dart';
 import 'package:vamoose/state/hint_wallet.dart';
 import 'package:vamoose/state/progress_controller.dart';
@@ -135,6 +136,7 @@ AppServices buildTestServices({
     settings: settings,
     progress: ProgressController(memory, levelCount: levels.count),
     hints: HintWallet(memory, time),
+    coins: CoinWallet(memory),
     daily: DailyController(memory, time),
     dailyPuzzle: const DailyPuzzle(),
     feedback: GameFeedback(

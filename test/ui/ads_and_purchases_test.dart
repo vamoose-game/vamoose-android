@@ -14,17 +14,19 @@ import '../support/pumping.dart';
 import '../support/test_services.dart';
 
 final Finder banner = find.byKey(const ValueKey('ad-banner'));
-const String watchAd = 'Watch a short ad for +1 hint';
+const String doubleIt = 'Double it ×2';
+const String watchHint = 'Watch a short video: free hint';
+final Finder hintShown = find.bySemanticsLabel(RegExp('hint: this one can go'));
 
-LevelCompleteScreen completed(int level) => LevelCompleteScreen(
-  result: LevelResult(
-    mode: CampaignMode(level),
-    blocks: 10,
-    bumps: 0,
-    time: const Duration(seconds: 40),
-    stars: 3,
-  ),
-);
+LevelCompleteScreen completed(int level, {int coins = 25}) =>
+    LevelCompleteScreen(
+      result: LevelResult(
+        mode: CampaignMode(level),
+        bumps: 0,
+        stars: 3,
+        coins: coins,
+      ),
+    );
 
 void main() {
   late AppServices services;
@@ -63,14 +65,24 @@ void main() {
     });
   });
 
-  group('rewarded video on board clear', () {
-    testWidgets('a watched video adds a hint', (tester) async {
+  group('double the coins on Level complete', () {
+    setUp(() => services.coins.earn(25));
+
+    testWidgets('a watched video doubles the coins once per level', (
+      tester,
+    ) async {
       await tester.launch(services, home: completed(5));
+      await tester.wait(const Duration(seconds: 2));
 
-      await tester.tapAndWait(find.text(watchAd));
+      await tester.tapAndWait(find.text(doubleIt), const Duration(seconds: 2));
 
-      expect(services.hints.count, 4);
-      expect(find.text('+1 hint added'), findsOneWidget);
+      expect(services.coins.balance, 150);
+      expect(find.text('Doubled'), findsOneWidget);
+      expect(find.text('+50'), findsOneWidget);
+      await tester.close();
+
+      await tester.launch(services, home: completed(5));
+      expect(find.text(doubleIt), findsNothing);
       await tester.close();
     });
 
@@ -78,10 +90,10 @@ void main() {
       ads.nextReward = RewardOutcome.skipped;
       await tester.launch(services, home: completed(5));
 
-      await tester.tapAndWait(find.text(watchAd));
+      await tester.tapAndWait(find.text(doubleIt));
 
-      expect(services.hints.count, 3);
-      expect(find.byType(SnackBar), findsNothing);
+      expect(services.coins.balance, 125);
+      expect(find.text(doubleIt), findsOneWidget);
       await tester.close();
     });
 
@@ -89,9 +101,9 @@ void main() {
       ads.nextReward = RewardOutcome.unavailable;
       await tester.launch(services, home: completed(5));
 
-      await tester.tapAndWait(find.text(watchAd));
+      await tester.tapAndWait(find.text(doubleIt));
 
-      expect(services.hints.count, 3);
+      expect(services.coins.balance, 125);
       expect(find.text('No video right now. Try again soon.'), findsOneWidget);
       await tester.close();
     });
@@ -100,33 +112,73 @@ void main() {
       ads.isReady = false;
       await tester.launch(services, home: completed(5));
 
-      expect(find.text(watchAd), findsNothing);
+      expect(find.text(doubleIt), findsNothing);
+      await tester.close();
+    });
+
+    testWidgets('a replay without new coins has nothing to double', (
+      tester,
+    ) async {
+      await tester.launch(services, home: completed(5, coins: 0));
+
+      expect(find.text(doubleIt), findsNothing);
+      expect(find.textContaining('+'), findsNothing);
       await tester.close();
     });
   });
 
-  group('rewarded video when out of hints', () {
+  group('hint sheet when out of hints', () {
     setUp(() async {
       for (var index = 0; index < 3; index++) {
         await services.hints.spend();
       }
     });
 
-    testWidgets('a watched video adds a hint to use', (tester) async {
+    testWidgets('a watched video shows a hint right away', (tester) async {
+      final semantics = tester.ensureSemantics();
       await tester.launch(
         services,
         home: const GameScreen(mode: CampaignMode(5)),
       );
 
       await tester.tapAndWait(find.text('Get hint'));
-      await tester.tapAndWait(find.text('Watch video · +1 hint'));
+      await tester.tapAndWait(find.text(watchHint));
 
-      expect(find.text('+1 hint added'), findsOneWidget);
-      expect(services.hints.count, 1);
+      expect(find.text('Need a hint?'), findsNothing);
+      expect(hintShown, findsOneWidget);
+      expect(services.hints.count, 0);
+      expect(services.coins.balance, 100);
+      semantics.dispose();
+      await tester.close();
+    });
 
-      await tester.tapAndWait(find.text('Back to the puzzle'));
-      expect(find.text('Out of hints'), findsNothing);
-      expect(find.text('Hint'), findsOneWidget);
+    testWidgets('coins buy a hint right away', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await tester.launch(
+        services,
+        home: const GameScreen(mode: CampaignMode(5)),
+      );
+
+      await tester.tapAndWait(find.text('Get hint'));
+      await tester.tapAndWait(find.text('Use'));
+
+      expect(services.coins.balance, 50);
+      expect(hintShown, findsOneWidget);
+      semantics.dispose();
+      await tester.close();
+    });
+
+    testWidgets('too few coins says so', (tester) async {
+      await services.coins.spend(60);
+      await tester.launch(
+        services,
+        home: const GameScreen(mode: CampaignMode(5)),
+      );
+
+      await tester.tapAndWait(find.text('Get hint'));
+
+      expect(find.text('Not enough coins (a hint is 50)'), findsOneWidget);
+      expect(find.text(watchHint), findsOneWidget);
       await tester.close();
     });
 
@@ -138,11 +190,11 @@ void main() {
       );
 
       await tester.tapAndWait(find.text('Get hint'));
-      await tester.tapAndWait(find.text('Watch video · +1 hint'));
+      await tester.tapAndWait(find.text(watchHint));
 
       expect(find.text('No video right now'), findsOneWidget);
       await tester.tapAndWait(find.text('Try again'));
-      expect(find.text('Out of hints'), findsOneWidget);
+      expect(find.text('Need a hint?'), findsOneWidget);
       await tester.close();
     });
   });

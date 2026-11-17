@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../app/app_services.dart';
 import '../../domain/daily_puzzle.dart';
+import '../../domain/economy.dart';
 import '../../state/daily_controller.dart';
 import '../formatting.dart';
 import '../game/game_mode.dart';
@@ -12,6 +13,7 @@ import '../navigation.dart';
 import '../theme/app_text.dart';
 import '../theme/palette.dart';
 import '../widgets/block_face.dart';
+import '../widgets/coin.dart';
 import '../widgets/entrance.dart';
 import '../widgets/key_button.dart';
 import '../widgets/looping.dart';
@@ -140,14 +142,10 @@ class DailyScreen extends StatelessWidget {
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(
-                                        Icons.lightbulb_outline_rounded,
-                                        size: 16,
-                                        color: Palette.ink,
-                                      ),
+                                      const CoinGlyph(size: 18),
                                       const SizedBox(width: 6),
                                       Text(
-                                        '+1 hint',
+                                        '+${Economy.dailyPuzzleReward}',
                                         style: AppText.bodyStrong.copyWith(
                                           fontSize: 15,
                                         ),

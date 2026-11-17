@@ -3,9 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../domain/direction.dart';
 import '../../state/daily_controller.dart';
-import '../../state/hint_wallet.dart';
 import '../../state/progress_controller.dart';
-import '../formatting.dart';
 import '../game/game_mode.dart';
 import '../navigation.dart';
 import '../theme/app_text.dart';
@@ -17,7 +15,7 @@ import '../widgets/glyphs.dart';
 import '../widgets/key_button.dart';
 import '../widgets/logo.dart';
 import '../widgets/looping.dart';
-import '../widgets/pill.dart';
+import '../widgets/coin.dart';
 import '../widgets/surface_card.dart';
 import '../widgets/tap_ring.dart';
 import 'daily_screen.dart';
@@ -28,7 +26,6 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hints = context.watch<HintWallet>().count;
     final progress = context.watch<ProgressController>();
     final daily = context.watch<DailyController>();
     final level = progress.currentLevel;
@@ -40,26 +37,7 @@ class HomeScreen extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Pill(
-                    icon: const SizedBox.square(
-                      dimension: 22,
-                      child: Stack(
-                        children: [
-                          Icon(
-                            Icons.lightbulb_rounded,
-                            color: Palette.sun,
-                            size: 22,
-                          ),
-                          Icon(
-                            Icons.lightbulb_outline_rounded,
-                            color: Palette.ink,
-                            size: 22,
-                          ),
-                        ],
-                      ),
-                    ),
-                    text: Formatting.plural(hints, 'hint'),
-                  ),
+                  const CoinChip(height: 48),
                   const Spacer(),
                   IconKey(
                     icon: Icons.settings_outlined,

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
@@ -20,6 +21,8 @@ import '../game/hint_sheet.dart';
 import '../game/pause_dialog.dart';
 import '../navigation.dart';
 import '../theme/app_text.dart';
+import '../theme/app_theme.dart';
+import '../theme/board_colors.dart';
 import '../theme/motion.dart';
 import '../theme/palette.dart';
 import '../widgets/ad_banner_slot.dart';
@@ -185,75 +188,81 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final hints = context.select<HintWallet, int>((wallet) => wallet.count);
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              _Header(title: widget.mode.title, onPause: _pause),
-              const SizedBox(height: 16),
-              ListenableBuilder(
-                listenable: _session,
-                builder: (context, _) => _Stats(session: _session),
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: Center(
-                  child: AspectRatio(
-                    aspectRatio: 1,
-                    child: SurfaceCard(
-                      radius: 28,
-                      raised: true,
-                      padding: const EdgeInsets.all(13),
-                      child: ListenableBuilder(
-                        listenable: _session,
-                        builder: (context, _) => BoardView(
-                          key: ValueKey(_round),
-                          session: _session,
-                          onOutcome: _onOutcome,
+    final colors = BoardColors.of(context);
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: AppTheme.statusBar(colors.brightness),
+      child: Scaffold(
+        backgroundColor: colors.background,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                _Header(title: widget.mode.title, onPause: _pause),
+                const SizedBox(height: 16),
+                ListenableBuilder(
+                  listenable: _session,
+                  builder: (context, _) => _Stats(session: _session),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: Center(
+                    child: AspectRatio(
+                      aspectRatio: 1,
+                      child: SurfaceCard(
+                        radius: 28,
+                        raised: true,
+                        color: colors.board,
+                        padding: const EdgeInsets.all(13),
+                        child: ListenableBuilder(
+                          listenable: _session,
+                          builder: (context, _) => BoardView(
+                            key: ValueKey(_round),
+                            session: _session,
+                            onOutcome: _onOutcome,
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: KeyButton(
-                      onPressed: _restart,
-                      child: const _ButtonLabel(
-                        icon: Icons.restart_alt_rounded,
-                        text: 'Restart',
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: KeyButton(
+                        onPressed: _restart,
+                        child: const _ButtonLabel(
+                          icon: Icons.restart_alt_rounded,
+                          text: 'Restart',
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: KeyButton(
-                      tone: KeyTone.hint,
-                      onPressed: _hint,
-                      semanticLabel: hints > 0
-                          ? 'Use a hint, $hints left'
-                          : 'Get a hint with coins or a short video',
-                      child: hints > 0
-                          ? _ButtonLabel(
-                              icon: Icons.lightbulb_outline_rounded,
-                              text: 'Hint',
-                              trailing: _CountBadge(count: hints),
-                            )
-                          : const _ButtonLabel(
-                              icon: Icons.lightbulb_outline_rounded,
-                              text: 'Get hint',
-                            ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: KeyButton(
+                        tone: KeyTone.hint,
+                        onPressed: _hint,
+                        semanticLabel: hints > 0
+                            ? 'Use a hint, $hints left'
+                            : 'Get a hint with coins or a short video',
+                        child: hints > 0
+                            ? _ButtonLabel(
+                                icon: Icons.lightbulb_outline_rounded,
+                                text: 'Hint',
+                                trailing: _CountBadge(count: hints),
+                              )
+                            : const _ButtonLabel(
+                                icon: Icons.lightbulb_outline_rounded,
+                                text: 'Get hint',
+                              ),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const AdBannerSlot(),
-            ],
+                  ],
+                ),
+                const AdBannerSlot(),
+              ],
+            ),
           ),
         ),
       ),
@@ -279,7 +288,9 @@ class _Header extends StatelessWidget {
         Expanded(
           child: Text(
             title,
-            style: AppText.pageTitle,
+            style: AppText.pageTitle.copyWith(
+              color: BoardColors.of(context).ink,
+            ),
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

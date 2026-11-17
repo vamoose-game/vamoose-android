@@ -1,7 +1,5 @@
 import 'package:flutter/widgets.dart';
 
-import '../../domain/direction.dart';
-
 abstract final class Palette {
   static const Color mist = Color(0xFFEEF1F8);
   static const Color white = Color(0xFFFFFFFF);
@@ -41,13 +39,6 @@ abstract final class Palette {
   static const Color danger = Color(0xFFC2391D);
   static const Color dashed = Color(0xFFAEB7CE);
   static const Color scrim = Color(0x8C1B2340);
-
-  static Color forDirection(Direction direction) => switch (direction) {
-    Direction.up => up,
-    Direction.right => right,
-    Direction.down => down,
-    Direction.left => left,
-  };
 
   static Color darken(Color color, double amount) =>
       Color.alphaBlend(Color.fromRGBO(0, 0, 0, amount), color);

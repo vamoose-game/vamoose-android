@@ -34,6 +34,11 @@ class GameFeedback {
 
   void starEarned(int index) => _play(Sound.star, variant: index);
 
+  void themeUnlocked() {
+    _play(Sound.star, variant: 2);
+    _vibrate(_haptics.medium);
+  }
+
   void _play(Sound sound, {int variant = 0}) {
     if (_settings.sound) {
       _sounds.play(sound, variant: variant.clamp(0, sound.variants - 1));

@@ -25,6 +25,7 @@ import '../state/hint_wallet.dart';
 import '../state/progress_controller.dart';
 import '../state/settings_controller.dart';
 import '../state/streak_controller.dart';
+import '../state/theme_controller.dart';
 
 class AppServices {
   const AppServices({
@@ -43,6 +44,7 @@ class AppServices {
     required this.interstitials,
     required this.links,
     required this.music,
+    required this.themes,
   });
 
   final LevelCatalog levels;
@@ -60,6 +62,7 @@ class AppServices {
   final InterstitialPolicy interstitials;
   final LinkOpener links;
   final BackgroundMusic music;
+  final ThemeController themes;
 
   static Future<AppServices> create() async {
     const clock = SystemClock();
@@ -90,6 +93,7 @@ class AppServices {
       interstitials: InterstitialPolicy(clock, adFree),
       links: const ExternalLinkOpener(),
       music: BackgroundMusic(AudioPlayerMusic(), settings),
+      themes: ThemeController(store, coins),
     );
   }
 }

@@ -15,6 +15,7 @@ abstract final class Palette {
   static const Color left = Color(0xFF8457F0);
   static const Color sun = Color(0xFFFFC23D);
   static const Color silver = Color(0xFFC9D0E4);
+  static const Color bronze = Color(0xFFE29A5C);
   static const Color alert = Color(0xFFD9472A);
   static const Color line = Color(0xFFE3E8F3);
   static const Color muted = Color(0xFFC5CDDF);

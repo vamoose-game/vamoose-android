@@ -9,7 +9,7 @@ import 'package:vamoose/domain/level_generator.dart';
 import 'package:vamoose/domain/level_spec.dart';
 
 const _recipes = [
-  _Recipe(blocksFrom: 4, blocksTo: 18, twistFrom: 0.1, twistTo: 0.3),
+  _Recipe(blocksFrom: 6, blocksTo: 19, twistFrom: 0.1, twistTo: 0.3),
   _Recipe(blocksFrom: 16, blocksTo: 21, twistFrom: 0.2, twistTo: 0.4),
   _Recipe(blocksFrom: 19, blocksTo: 23, twistFrom: 0.4, twistTo: 0.6),
   _Recipe(blocksFrom: 21, blocksTo: 25, twistFrom: 0.5, twistTo: 0.7),
@@ -23,16 +23,12 @@ const _recipes = [
   _Recipe(blocksFrom: 36, blocksTo: 42, twistFrom: 0.9, twistTo: 1),
 ];
 
-const _firstLockLevel = 12;
-const _secondLockLevel = 76;
+const _lockLevels = [12, 76, 181];
 const _restEvery = 5;
 
 int _locksFor(int level) {
-  if (level < _firstLockLevel) {
-    return 0;
-  }
-  final pairs = level < _secondLockLevel ? 1 : 2;
-  return level % _restEvery == 0 ? pairs - 1 : pairs;
+  final pairs = _lockLevels.where((first) => level >= first).length;
+  return pairs > 0 && level % _restEvery == 0 ? pairs - 1 : pairs;
 }
 
 int _keyDepthFor(int level) => level < 61

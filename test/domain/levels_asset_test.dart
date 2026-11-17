@@ -52,17 +52,18 @@ void main() {
       if (number < 12) {
         expect(pairs, 0, reason: 'level $number');
       }
-      expect(pairs, lessThanOrEqualTo(2), reason: 'level $number');
+      expect(pairs, lessThanOrEqualTo(3), reason: 'level $number');
       expectFairLocks(board, reason: 'level $number');
     }
     expect(locksOf(catalog.byNumber(12).board), hasLength(1));
     expect(locksOf(catalog.byNumber(76).board), hasLength(2));
+    expect(locksOf(catalog.byNumber(181).board), hasLength(3));
   });
 
   test('first level starts gentle', () {
     final board = catalog.byNumber(1).board;
 
-    expect(board.blockCount, lessThanOrEqualTo(4));
+    expect(board.blockCount, inInclusiveRange(5, 7));
     expect(board.movableBlocks, isNotEmpty);
   });
 }

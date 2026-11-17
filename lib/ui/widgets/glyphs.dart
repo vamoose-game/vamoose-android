@@ -142,3 +142,96 @@ class _StarPainter extends CustomPainter {
   bool shouldRepaint(_StarPainter oldDelegate) =>
       oldDelegate.fill != fill || oldDelegate.stroke != stroke;
 }
+
+class KeyGlyph extends StatelessWidget {
+  const KeyGlyph({super.key, required this.size, this.color = Palette.ink});
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: Size.square(size),
+      painter: _IconPainter(color, (path) {
+        path
+          ..addOval(
+            Rect.fromCircle(center: const Offset(7.5, 15.5), radius: 5.5),
+          )
+          ..moveTo(21, 2)
+          ..lineTo(11.4, 11.6)
+          ..moveTo(15.5, 7.5)
+          ..lineTo(18.5, 10.5)
+          ..lineTo(22, 7)
+          ..lineTo(19, 4);
+      }),
+    );
+  }
+}
+
+class PadlockGlyph extends StatelessWidget {
+  const PadlockGlyph({
+    super.key,
+    required this.size,
+    this.open = false,
+    this.color = Palette.ink,
+  });
+
+  final double size;
+  final bool open;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: Size.square(size),
+      painter: _IconPainter(color, (path) {
+        path
+          ..addRRect(
+            RRect.fromRectAndRadius(
+              const Rect.fromLTWH(5, 11, 14, 10),
+              const Radius.circular(2),
+            ),
+          )
+          ..moveTo(8, 11)
+          ..lineTo(8, 7);
+        if (open) {
+          path.arcToPoint(
+            const Offset(15.5, 5),
+            radius: const Radius.circular(4),
+          );
+        } else {
+          path
+            ..arcToPoint(const Offset(16, 7), radius: const Radius.circular(4))
+            ..lineTo(16, 11);
+        }
+      }),
+    );
+  }
+}
+
+class _IconPainter extends CustomPainter {
+  _IconPainter(this.color, this.trace);
+
+  final Color color;
+  final void Function(Path path) trace;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.scale(size.width / 24);
+    final path = Path();
+    trace(path);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.8
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_IconPainter oldDelegate) => oldDelegate.color != color;
+}

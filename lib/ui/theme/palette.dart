@@ -25,6 +25,14 @@ abstract final class Palette {
   static const Color coinRing = Color(0xFFE0A21C);
   static const Color cream = Color(0xFFFFF4D6);
   static const Color mint = Color(0xFFE6F6F2);
+  static const Color ice = Color(0xFF1F6FB8);
+  static const Color iceDeep = Color(0xFF123E66);
+  static const Color iceTint = Color(0xFFDDEEFB);
+  static const Color iceNode = Color(0xFFCDE5F8);
+  static const Color iceEdge = Color(0xFF9CC6EA);
+  static const Color iceSlot = Color(0xFF8DB8DD);
+  static const Color iceKeyEdge = Color(0xFFB9D9F2);
+  static const Color streakText = Color(0xFFC9D0E4);
   static const Color mintText = Color(0xFF0B7A6A);
   static const Color creamEdge = Color(0xFFF2D98E);
   static const Color blueTint = Color(0xFFE6ECFE);

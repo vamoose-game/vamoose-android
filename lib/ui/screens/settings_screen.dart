@@ -9,6 +9,7 @@ import '../../state/coin_wallet.dart';
 import '../../state/daily_controller.dart';
 import '../../state/progress_controller.dart';
 import '../../state/settings_controller.dart';
+import '../../state/streak_controller.dart';
 import '../navigation.dart';
 import '../theme/app_text.dart';
 import '../theme/palette.dart';
@@ -25,6 +26,7 @@ class SettingsScreen extends StatelessWidget {
     final progress = context.read<ProgressController>();
     final daily = context.read<DailyController>();
     final coins = context.read<CoinWallet>();
+    final streak = context.read<StreakController>();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -56,6 +58,7 @@ class SettingsScreen extends StatelessWidget {
       await progress.reset();
       await daily.reset();
       await coins.reset();
+      await streak.reset();
     }
   }
 

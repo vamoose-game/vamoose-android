@@ -20,6 +20,7 @@ import 'package:vamoose/state/daily_controller.dart';
 import 'package:vamoose/state/hint_wallet.dart';
 import 'package:vamoose/state/progress_controller.dart';
 import 'package:vamoose/state/settings_controller.dart';
+import 'package:vamoose/state/streak_controller.dart';
 
 import 'fixed_clock.dart';
 import 'memory_store.dart';
@@ -131,12 +132,14 @@ AppServices buildTestServices({
   final levels = loadLevelCatalog();
   final settings = SettingsController(memory);
   final adFree = AdFreeController(memory);
+  final coins = CoinWallet(memory);
   return AppServices(
     levels: levels,
     settings: settings,
     progress: ProgressController(memory, levelCount: levels.count),
-    hints: HintWallet(memory, time),
-    coins: CoinWallet(memory),
+    hints: HintWallet(memory),
+    coins: coins,
+    streak: StreakController(memory, time, coins),
     daily: DailyController(memory, time),
     dailyPuzzle: const DailyPuzzle(),
     feedback: GameFeedback(

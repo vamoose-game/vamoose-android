@@ -2,7 +2,7 @@ import 'chapter.dart';
 
 abstract final class Chapters {
   static const List<Chapter> all = [
-    Chapter(index: 0, name: 'Warm-up', boardSize: 5),
+    Chapter(index: 0, name: 'Warm-up', boardSize: 6),
     Chapter(index: 1, name: 'Easy', boardSize: 6),
     Chapter(index: 2, name: 'Steady', boardSize: 6),
     Chapter(index: 3, name: 'Flow', boardSize: 6),

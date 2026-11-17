@@ -6,6 +6,8 @@ import 'package:vamoose/domain/level_codec.dart';
 import 'package:vamoose/domain/level_generator.dart';
 import 'package:vamoose/domain/level_spec.dart';
 
+import '../support/locks.dart';
+
 void main() {
   const generator = LevelGenerator();
 
@@ -62,6 +64,46 @@ void main() {
       ),
       throwsArgumentError,
     );
+  });
+
+  test('adds fair lock pairs when the spec asks for them', () {
+    for (var seed = 0; seed < 20; seed++) {
+      final board = generator.generate(
+        LevelSpec(
+          size: 6 + seed % 3,
+          blockCount: 20 + seed % 8,
+          twist: 0.5,
+          locks: 1 + seed % 2,
+          keyDepth: 1 + seed % 2,
+        ),
+        Random(seed),
+      );
+
+      expect(locksOf(board), hasLength(1 + seed % 2), reason: 'seed $seed');
+      expectWellFormed(board);
+      expectFairLocks(board, reason: 'seed $seed');
+    }
+  });
+
+  test('boards without locks in the spec have no restraints', () {
+    final board = generator.generate(
+      const LevelSpec(size: 6, blockCount: 18, twist: 0.4),
+      Random(5),
+    );
+
+    expect(board.restraints, isEmpty);
+  });
+
+  test('codec round trips locks', () {
+    final board = generator.generate(
+      const LevelSpec(size: 7, blockCount: 24, twist: 0.5, locks: 2),
+      Random(9),
+    );
+
+    final decoded = LevelCodec.decode(LevelCodec.encode([board])).single.board;
+
+    expect(locksOf(decoded), hasLength(2));
+    expect(LevelCodec.encode([decoded]), LevelCodec.encode([board]));
   });
 
   test('codec round trips a board', () {

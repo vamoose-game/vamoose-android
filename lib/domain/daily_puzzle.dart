@@ -7,7 +7,7 @@ import 'level_spec.dart';
 class DailyPuzzle {
   const DailyPuzzle({this._generator = const LevelGenerator()});
 
-  static const LevelSpec spec = LevelSpec(size: 5, blockCount: 15, twist: 0.3);
+  static const LevelSpec spec = LevelSpec(size: 6, blockCount: 16, twist: 0.3);
   static const String difficulty = 'Relaxed';
 
   final LevelGenerator _generator;

@@ -73,13 +73,13 @@ void main() {
           size: 6 + seed % 3,
           blockCount: 20 + seed % 8,
           twist: 0.5,
-          locks: 1 + seed % 2,
+          locks: 1 + seed % 3,
           keyDepth: 1 + seed % 2,
         ),
         Random(seed),
       );
 
-      expect(locksOf(board), hasLength(1 + seed % 2), reason: 'seed $seed');
+      expect(locksOf(board), hasLength(1 + seed % 3), reason: 'seed $seed');
       expectWellFormed(board);
       expectFairLocks(board, reason: 'seed $seed');
     }

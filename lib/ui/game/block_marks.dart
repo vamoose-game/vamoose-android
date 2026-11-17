@@ -16,7 +16,11 @@ enum MarkRole { key, lock }
 typedef BlockMark = ({MarkRole role, int pair});
 
 abstract final class BlockMarks {
-  static const List<Color> pairColors = [Palette.sun, Palette.silver];
+  static const List<Color> pairColors = [
+    Palette.sun,
+    Palette.silver,
+    Palette.bronze,
+  ];
 
   static Map<int, BlockMark> of(Board board) {
     final marks = <int, BlockMark>{};

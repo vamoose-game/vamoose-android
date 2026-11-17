@@ -6,7 +6,8 @@ Android · Flutter · no backend · version 1.0.0
 
 ## Game
 
-- 360 levels in 12 chapters, boards from 5×5 to 8×8
+- 360 levels in 12 chapters, boards from 6×6 to 8×8
+- Locked blocks from level 12: a block with a padlock moves only after the block with its key has left; two pairs (gold and silver) from level 76
 - Every level is solvable in any order: you can never get stuck
 - Stars: no bumps = 3, 1–2 bumps = 2, 3 or more = 1
 - 3 starting hints, 1 free hint every day, +1 hint for each daily puzzle
@@ -32,7 +33,7 @@ flutter test
 
 | Path | What |
 | --- | --- |
-| `lib/domain` | Board, tap rules, stars, chapters, level generator |
+| `lib/domain` | Board, tap rules, restraints (locks), stars, chapters, level generator and its features |
 | `lib/data` | Local storage and level catalog |
 | `lib/state` | Settings, progress, hints, daily streak, game session |
 | `lib/services` | Sound, haptics, AdMob ads, Play Billing |

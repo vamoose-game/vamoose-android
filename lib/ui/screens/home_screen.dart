@@ -12,6 +12,7 @@ import '../theme/motion.dart';
 import '../theme/palette.dart';
 import '../widgets/block_face.dart';
 import '../widgets/entrance.dart';
+import '../widgets/fit_to_space.dart';
 import '../widgets/glyphs.dart';
 import '../widgets/key_button.dart';
 import '../widgets/logo.dart';
@@ -57,37 +58,36 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
               const Expanded(
-                child: Center(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        _DemoBoard(),
-                        SizedBox(height: 34),
-                        Entrance(
-                          duration: Duration(milliseconds: 600),
-                          offset: Offset(0, 16),
-                          child: Column(
-                            children: [
-                              FittedBox(child: Wordmark(withKey: true)),
-                              SizedBox(height: 12),
-                              Text(
-                                'Slide every block off the board.',
-                                style: TextStyle(
-                                  fontFamily: AppText.family,
-                                  fontSize: 18,
-                                  height: 1.4,
-                                  color: Palette.slate,
-                                ),
-                                textAlign: TextAlign.center,
+                child: FitToSpace(
+                  child: Column(
+                    children: [
+                      _DemoBoard(),
+                      SizedBox(height: 34),
+                      Entrance(
+                        duration: Duration(milliseconds: 600),
+                        offset: Offset(0, 16),
+                        child: Column(
+                          children: [
+                            FittedBox(child: Wordmark(withKey: true)),
+                            SizedBox(height: 12),
+                            Text(
+                              'Slide every block off the board.',
+                              style: TextStyle(
+                                fontFamily: AppText.family,
+                                fontSize: 18,
+                                height: 1.4,
+                                color: Palette.slate,
                               ),
-                            ],
-                          ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
+              const SizedBox(height: 16),
               KeyButton(
                 tone: KeyTone.primary,
                 height: 76,

@@ -20,11 +20,10 @@ class PageHeader extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Text(
-            title,
-            style: AppText.pageTitle,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(title, style: AppText.pageTitle, maxLines: 1),
           ),
         ),
         ?trailing,

@@ -16,6 +16,7 @@ import '../theme/motion.dart';
 import '../theme/palette.dart';
 import '../widgets/coin.dart';
 import '../widgets/entrance.dart';
+import '../widgets/fit_to_space.dart';
 import '../widgets/glyphs.dart';
 import '../widgets/key_button.dart';
 import '../widgets/surface_card.dart';
@@ -183,55 +184,54 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
                 ],
               ),
               Expanded(
-                child: Center(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        const Entrance(
-                          duration: Duration(milliseconds: 600),
-                          curve: Motion.popCurve,
-                          fromScale: 0.2,
-                          fromTurns: -20 / 360,
-                          child: _Badge(),
-                        ),
-                        const SizedBox(height: 18),
-                        Entrance(
-                          delay: const Duration(milliseconds: 250),
-                          offset: _rise,
-                          child: Column(
-                            children: [
-                              Text(
-                                'Board clear!',
-                                style: AppText.title.copyWith(fontSize: 30),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                _message,
-                                style: AppText.body.copyWith(fontSize: 17),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        _StarRow(controllers: _stars),
-                        if (_result.coins > 0) ...[
-                          const SizedBox(height: 20),
-                          Entrance(
-                            delay: const Duration(seconds: 1),
-                            offset: _rise,
-                            child: _CoinsCard(
-                              spin: _spin,
-                              count: _count,
-                              shown: () => _shown,
+                child: FitToSpace(
+                  child: Column(
+                    children: [
+                      const Entrance(
+                        duration: Duration(milliseconds: 600),
+                        curve: Motion.popCurve,
+                        fromScale: 0.2,
+                        fromTurns: -20 / 360,
+                        child: _Badge(),
+                      ),
+                      const SizedBox(height: 18),
+                      Entrance(
+                        delay: const Duration(milliseconds: 250),
+                        offset: _rise,
+                        child: Column(
+                          children: [
+                            Text(
+                              'Board clear!',
+                              style: AppText.title.copyWith(fontSize: 30),
                             ),
+                            const SizedBox(height: 6),
+                            Text(
+                              _message,
+                              style: AppText.body.copyWith(fontSize: 17),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      _StarRow(controllers: _stars),
+                      if (_result.coins > 0) ...[
+                        const SizedBox(height: 20),
+                        Entrance(
+                          delay: const Duration(seconds: 1),
+                          offset: _rise,
+                          child: _CoinsCard(
+                            spin: _spin,
+                            count: _count,
+                            shown: () => _shown,
                           ),
-                        ],
+                        ),
                       ],
-                    ),
+                    ],
                   ),
                 ),
               ),
+              const SizedBox(height: 16),
               Entrance(
                 delay: const Duration(milliseconds: 1150),
                 offset: _rise,

@@ -25,8 +25,10 @@ There are no timers and no lives. Every level can be solved, so you can never ge
 • 360 levels in 12 chapters, from Warm-up to Zen
 • Boards grow from 6×6 to 8×8 as you play
 • Locked blocks add a twist: clear the block with the key to open the lock
-• A new daily puzzle every day, with streaks
-• Hints show you a block that can go, plus one free hint every day
+• Earn coins for every clear and every new star
+• Daily streak: collect coins 7 days in a row, open the day-7 chest and solve a new daily puzzle
+• Hints show you a block that can go
+• Three board themes: Classic, Wood and Night
 • Calm background music and gentle sound effects
 • Sound, music and vibration you can switch on or off
 • Plays offline, no account needed
@@ -43,3 +45,7 @@ There are no timers and no lives. Every level can be solved, so you can never ge
 ## First release notes
 
 First test build of Vamoose.
+
+## Release notes, 1.0.0 (9)
+
+New: coins, a daily streak with a day-7 chest, and two board themes, Wood and Night. Up to three locked-block pairs, fuller first levels and better fit on small phones.

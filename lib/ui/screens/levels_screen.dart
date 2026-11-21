@@ -1,11 +1,14 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/app_services.dart';
 import '../../domain/chapter.dart';
 import '../../domain/chapters.dart';
 import '../../domain/star_rating.dart';
 import '../../state/progress_controller.dart';
+import '../game/block_marks.dart';
 import '../game/game_mode.dart';
+import '../game/turn_face.dart';
 import '../navigation.dart';
 import '../theme/app_text.dart';
 import '../theme/motion.dart';
@@ -181,9 +184,18 @@ class _ChapterSummary extends StatelessWidget {
                   children: [
                     Text(chapter.name, style: AppText.heading),
                     const SizedBox(height: 4),
-                    Text(
-                      'Levels ${chapter.firstLevel}–${chapter.lastLevel} · ${chapter.boardSize}×${chapter.boardSize} board',
-                      style: AppText.body.copyWith(fontSize: 15),
+                    Row(
+                      children: [
+                        Text(
+                          '${chapter.firstLevel}–${chapter.lastLevel} · ${chapter.boardSize}×${chapter.boardSize}',
+                          style: AppText.body.copyWith(fontSize: 15),
+                        ),
+                        for (final mechanic in _mechanicsIn(context))
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: mechanic,
+                          ),
+                      ],
                     ),
                   ],
                 ),
@@ -222,6 +234,29 @@ class _ChapterSummary extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+extension on _ChapterSummary {
+  /// A badge for each mechanic the chapter's levels use.
+  List<Widget> _mechanicsIn(BuildContext context) {
+    final levels = context.read<AppServices>().levels;
+    final boards = [
+      for (var level = chapter.firstLevel; level <= chapter.lastLevel; level++)
+        levels.byNumber(level).board,
+    ];
+    return [
+      if (boards.any((board) => board.restraints.isNotEmpty))
+        Semantics(
+          label: 'locks',
+          child: const BlockBadge(icon: BadgeIcon.key, size: 22, framed: false),
+        ),
+      if (boards.any((board) => board.hasTurningBlocks))
+        Semantics(
+          label: 'turning blocks',
+          child: const TurnBadge(size: 22, framed: false),
+        ),
+    ];
   }
 }
 
@@ -398,13 +433,10 @@ class _LockedChapter extends StatelessWidget {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 14),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 250),
-                      child: Text(
-                        'Finish the ${previous.name} chapter to open ${chapter.name}.',
-                        style: AppText.body,
-                        textAlign: TextAlign.center,
-                      ),
+                    Text(
+                      'Finish ${previous.name} first',
+                      style: AppText.body,
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 20),
                     IntrinsicWidth(

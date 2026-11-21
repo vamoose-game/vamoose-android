@@ -15,7 +15,7 @@ import '../support/test_services.dart';
 
 final Finder banner = find.byKey(const ValueKey('ad-banner'));
 const String doubleIt = 'Double it ×2';
-const String watchHint = 'Watch a short video: free hint';
+const String watchHint = 'Free with a video';
 final Finder hintShown = find.bySemanticsLabel(RegExp('hint: this one can go'));
 
 LevelCompleteScreen completed(int level, {int coins = 25}) =>
@@ -104,7 +104,7 @@ void main() {
       await tester.tapAndWait(find.text(doubleIt));
 
       expect(services.coins.balance, 125);
-      expect(find.text('No video right now. Try again soon.'), findsOneWidget);
+      expect(find.text('No video right now'), findsOneWidget);
       await tester.close();
     });
 
@@ -177,7 +177,7 @@ void main() {
 
       await tester.tapAndWait(find.text('Get hint'));
 
-      expect(find.text('Not enough coins (a hint is 50)'), findsOneWidget);
+      expect(find.text('Not enough coins'), findsOneWidget);
       expect(find.text(watchHint), findsOneWidget);
       await tester.close();
     });
@@ -234,7 +234,7 @@ void main() {
 
       expect(services.adFree.adsRemoved, isTrue);
       expect(find.text('Ads removed'), findsOneWidget);
-      expect(find.text('Ads removed. Thank you!'), findsOneWidget);
+      expect(find.text('Ads removed. Thanks!'), findsOneWidget);
       await tester.close();
     });
 
@@ -254,7 +254,7 @@ void main() {
 
       await tester.tapAndWait(find.text('Restore purchase'));
 
-      expect(find.text('No purchase to restore.'), findsOneWidget);
+      expect(find.text('Nothing to restore'), findsOneWidget);
       await tester.close();
     });
 
@@ -265,7 +265,7 @@ void main() {
       await tester.tapAndWait(find.text('Restore purchase'));
 
       expect(services.adFree.adsRemoved, isTrue);
-      expect(find.text('Purchase restored. Ads removed.'), findsOneWidget);
+      expect(find.text('Purchase restored'), findsOneWidget);
       await tester.close();
     });
 

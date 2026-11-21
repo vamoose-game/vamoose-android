@@ -37,6 +37,12 @@ enum KeyTone {
     edge: Color(0xFF0B7F6E),
     depth: 6,
     content: Palette.white,
+  ),
+  boost(
+    face: Palette.mint,
+    edge: Palette.mintEdge,
+    depth: 4,
+    content: Palette.mintText,
   );
 
   const KeyTone({

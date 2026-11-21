@@ -39,6 +39,23 @@ class GameFeedback {
     _vibrate(_haptics.medium);
   }
 
+  void clockTicked() => _play(Sound.tick);
+
+  void levelFailed() {
+    _play(Sound.fail);
+    _vibrate(_haptics.heavy);
+  }
+
+  void timeAdded() {
+    _play(Sound.boost);
+    _vibrate(_haptics.light);
+  }
+
+  void lifeGained() {
+    _play(Sound.star, variant: 1);
+    _vibrate(_haptics.light);
+  }
+
   void _play(Sound sound, {int variant = 0}) {
     if (_settings.sound) {
       _sounds.play(sound, variant: variant.clamp(0, sound.variants - 1));

@@ -10,11 +10,7 @@ void main() {
     await tester.wait(const Duration(milliseconds: 1600));
 
     final screenCentre = tester.getCenter(find.byType(SplashScreen)).dx;
-    for (final text in [
-      'vamoose',
-      'The calm block puzzle',
-      'Setting up your puzzles…',
-    ]) {
+    for (final text in ['vamoose', 'Slide. Clear. Beat the clock.']) {
       expect(
         tester.getCenter(find.text(text)).dx,
         moreOrLessEquals(screenCentre, epsilon: 1),

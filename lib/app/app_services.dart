@@ -21,7 +21,9 @@ import '../services/purchases/purchase_service.dart';
 import '../state/ad_free_controller.dart';
 import '../state/coin_wallet.dart';
 import '../state/daily_controller.dart';
+import '../state/extra_time_wallet.dart';
 import '../state/hint_wallet.dart';
+import '../state/lives_controller.dart';
 import '../state/progress_controller.dart';
 import '../state/settings_controller.dart';
 import '../state/streak_controller.dart';
@@ -33,6 +35,8 @@ class AppServices {
     required this.settings,
     required this.progress,
     required this.hints,
+    required this.extraTime,
+    required this.lives,
     required this.coins,
     required this.streak,
     required this.daily,
@@ -45,12 +49,15 @@ class AppServices {
     required this.links,
     required this.music,
     required this.themes,
+    this.stopwatch = Stopwatch.new,
   });
 
   final LevelCatalog levels;
   final SettingsController settings;
   final ProgressController progress;
   final HintWallet hints;
+  final ExtraTimeWallet extraTime;
+  final LivesController lives;
   final CoinWallet coins;
   final StreakController streak;
   final DailyController daily;
@@ -64,6 +71,9 @@ class AppServices {
   final BackgroundMusic music;
   final ThemeController themes;
 
+  /// Makes the stopwatch behind each level's countdown.
+  final Stopwatch Function() stopwatch;
+
   static Future<AppServices> create() async {
     const clock = SystemClock();
     final store = SharedPreferencesStore(await SharedPreferences.getInstance());
@@ -73,15 +83,22 @@ class AppServices {
     final streak = StreakController(store, clock, coins);
     await streak.refresh();
     final adFree = AdFreeController(store);
+    final daily = DailyController(store, clock);
+    final dailyPuzzle = DailyPuzzle();
+    // Times today's puzzle now, behind the splash screen, so the daily
+    // screen finds it ready instead of working it out as it builds.
+    dailyPuzzle.puzzleFor(daily.today);
     return AppServices(
       levels: levels,
       settings: settings,
       progress: ProgressController(store, levelCount: levels.count),
       hints: HintWallet(store),
+      extraTime: ExtraTimeWallet(store, coins),
+      lives: LivesController(store, clock),
       coins: coins,
       streak: streak,
-      daily: DailyController(store, clock),
-      dailyPuzzle: const DailyPuzzle(),
+      daily: daily,
+      dailyPuzzle: dailyPuzzle,
       feedback: GameFeedback(
         sounds: AudioPlayerSoundEffects.create(),
         haptics: const SystemHaptics(),

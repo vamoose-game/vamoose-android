@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:vamoose/ui/screens/home_screen.dart';
 
 import '../support/pumping.dart';
 import '../support/test_services.dart';
@@ -9,13 +10,13 @@ void main() {
     final services = buildTestServices();
     await tester.launch(services);
 
-    expect(find.text('Setting up your puzzles…'), findsOneWidget);
+    expect(find.text('Slide. Clear. Beat the clock.'), findsOneWidget);
 
     await tester.wait(const Duration(milliseconds: 3000));
     expect(find.text('How to play'), findsOneWidget);
 
     await tester.tapAndWait(find.text('Let\'s play'));
-    expect(find.text('Slide every block off the board.'), findsOneWidget);
+    expect(find.byType(HomeScreen), findsOneWidget);
     expect(services.settings.tutorialSeen, isTrue);
 
     await tester.close();
@@ -45,7 +46,7 @@ void main() {
     await tester.tapAndWait(find.text('Play'));
 
     expect(find.text('Level 2'), findsOneWidget);
-    expect(find.text('blocks left'), findsOneWidget);
+    expect(find.text('0:10'), findsOneWidget);
 
     await tester.close();
   });

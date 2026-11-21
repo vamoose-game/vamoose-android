@@ -33,6 +33,23 @@ abstract final class Motion {
   static const Duration toggle = Duration(milliseconds: 200);
   static const Duration progress = Duration(milliseconds: 400);
   static const double keyTravel = 3;
+  static const Duration turnDelay = Duration(milliseconds: 120);
+  static const Duration turn = Duration(milliseconds: 380);
+  static const Duration turnColor = Duration(milliseconds: 300);
+  static const Duration orbit = Duration(seconds: 6);
+  static const Duration turnsDemo = Duration(seconds: 5);
+  static const Duration starLose = Duration(milliseconds: 600);
+  static const Duration timerPulse = Duration(seconds: 1);
+  static const Duration timerAdd = Duration(milliseconds: 700);
+  static const Duration plusFloat = Duration(milliseconds: 1100);
+  static const Duration boosterIn = Duration(milliseconds: 400);
+  static const Duration boosterDelay = Duration(milliseconds: 700);
+  static const Duration failDelay = Duration(milliseconds: 650);
+  static const Duration heartFly = Duration(milliseconds: 900);
+  static const Duration heartFlyDelay = Duration(milliseconds: 250);
+  static const Duration heartIn = Duration(milliseconds: 450);
+  static const Duration heartBeat = Duration(milliseconds: 1600);
+  static const Duration popover = Duration(milliseconds: 220);
 
   static const Curve leaveCurve = Cubic(0.55, 0, 0.75, 0.2);
   static const Curve popCurve = Cubic(0.34, 1.56, 0.64, 1);

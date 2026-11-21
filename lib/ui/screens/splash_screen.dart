@@ -95,7 +95,7 @@ class _SplashScreenState extends State<SplashScreen> {
                           ),
                           SizedBox(height: 10),
                           Text(
-                            'The calm block puzzle',
+                            'Slide. Clear. Beat the clock.',
                             style: TextStyle(
                               fontFamily: AppText.family,
                               fontSize: 17,
@@ -111,12 +111,8 @@ class _SplashScreenState extends State<SplashScreen> {
               Entrance(
                 delay: Duration(milliseconds: 900),
                 offset: Offset(0, 14),
-                child: Column(
-                  children: [
-                    SizedBox(width: 180, child: _LoadingBar()),
-                    SizedBox(height: 14),
-                    Text('Setting up your puzzles…', style: AppText.body),
-                  ],
+                child: Center(
+                  child: SizedBox(width: 180, child: _LoadingBar()),
                 ),
               ),
             ],

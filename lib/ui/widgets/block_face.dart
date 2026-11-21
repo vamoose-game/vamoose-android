@@ -16,6 +16,7 @@ class BlockFace extends StatelessWidget {
     this.arrowSize,
     this.stripes = 0,
     this.arrowOpacity = 1,
+    this.round = false,
   });
 
   final Direction direction;
@@ -25,13 +26,18 @@ class BlockFace extends StatelessWidget {
   final double stripes;
   final double arrowOpacity;
 
+  /// Drawn as a circle, like a turning block.
+  final bool round;
+
   @override
   Widget build(BuildContext context) {
     final color = BoardColors.of(context).forDirection(direction);
     return LayoutBuilder(
       builder: (context, constraints) {
         final shortest = constraints.biggest.shortestSide;
-        final radius = BorderRadius.circular(min(18, shortest * 0.27));
+        final radius = BorderRadius.circular(
+          round ? shortest / 2 : min(18, shortest * 0.27),
+        );
         final ring = ringColor;
         return DecoratedBox(
           position: DecorationPosition.foreground,

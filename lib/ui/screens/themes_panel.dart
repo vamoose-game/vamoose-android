@@ -18,18 +18,18 @@ import '../theme/palette.dart';
 import '../widgets/coin.dart';
 import '../widgets/key_button.dart';
 import '../widgets/mini_board.dart';
-import '../widgets/page_header.dart';
 import '../widgets/progress_bar.dart';
 import '../widgets/surface_card.dart';
 
-class ThemeShopScreen extends StatefulWidget {
-  const ThemeShopScreen({super.key});
+/// Board themes to preview, buy and put on: the Store's Themes tab.
+class ThemesPanel extends StatefulWidget {
+  const ThemesPanel({super.key});
 
   @override
-  State<ThemeShopScreen> createState() => _ThemeShopScreenState();
+  State<ThemesPanel> createState() => _ThemesPanelState();
 }
 
-class _ThemeShopScreenState extends State<ThemeShopScreen> {
+class _ThemesPanelState extends State<ThemesPanel> {
   late BoardTheme _selected = context.read<ThemeController>().active;
   int _pops = 0;
 
@@ -57,45 +57,33 @@ class _ThemeShopScreenState extends State<ThemeShopScreen> {
     final themes = context.watch<ThemeController>();
     final balance = context.watch<CoinWallet>().balance;
     final selected = _selected;
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 22),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const PageHeader(title: 'Themes', trailing: CoinChip()),
-              const SizedBox(height: 16),
-              Expanded(
-                child: _Preview(
-                  colors: BoardColors.from(selected),
-                  pops: _pops,
-                ),
-              ),
-              const SizedBox(height: 14),
-              for (final theme in BoardTheme.values) ...[
-                _ThemeRow(
-                  theme: theme,
-                  selected: theme == selected,
-                  inUse: theme == themes.active,
-                  owned: themes.owns(theme),
-                  onTap: () => _select(theme),
-                ),
-                const SizedBox(height: 8),
-              ],
-              const SizedBox(height: 8),
-              _Action(
-                theme: selected,
-                inUse: selected == themes.active,
-                owned: themes.owns(selected),
-                balance: balance,
-                onUse: () => themes.use(selected),
-                onBuy: _buy,
-              ),
-            ],
-          ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: _Preview(colors: BoardColors.from(selected), pops: _pops),
         ),
-      ),
+        const SizedBox(height: 12),
+        for (final theme in BoardTheme.values) ...[
+          _ThemeRow(
+            theme: theme,
+            selected: theme == selected,
+            inUse: theme == themes.active,
+            owned: themes.owns(theme),
+            onTap: () => _select(theme),
+          ),
+          const SizedBox(height: 8),
+        ],
+        const SizedBox(height: 8),
+        _Action(
+          theme: selected,
+          inUse: selected == themes.active,
+          owned: themes.owns(selected),
+          balance: balance,
+          onUse: () => themes.use(selected),
+          onBuy: _buy,
+        ),
+      ],
     );
   }
 }
@@ -395,7 +383,7 @@ class _Action extends StatelessWidget {
     final name = BoardColors.from(theme).name;
     const label = TextStyle(fontSize: 19, fontWeight: FontWeight.w700);
     if (inUse) {
-      return _Notice(child: Text('$name is your theme', style: _noticeText));
+      return _Notice(child: Text('Your theme', style: _noticeText));
     }
     if (owned) {
       return KeyButton(
@@ -429,7 +417,7 @@ class _Action extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            '${Formatting.grouped(theme.price - balance)} more coins needed',
+            '${Formatting.grouped(theme.price - balance)} more coins',
             style: _noticeText,
           ),
           const SizedBox(height: 8),

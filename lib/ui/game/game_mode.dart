@@ -1,15 +1,12 @@
 import '../../app/app_services.dart';
-import '../../domain/board.dart';
-import '../../domain/chapters.dart';
+import '../../domain/level.dart';
 
 sealed class GameMode {
   const GameMode();
 
-  Board boardFrom(AppServices services);
+  Puzzle puzzleFrom(AppServices services);
 
   String get title;
-
-  String? get chapter;
 }
 
 final class CampaignMode extends GameMode {
@@ -18,14 +15,11 @@ final class CampaignMode extends GameMode {
   final int level;
 
   @override
-  Board boardFrom(AppServices services) =>
-      services.levels.byNumber(level).board;
+  Puzzle puzzleFrom(AppServices services) =>
+      services.levels.byNumber(level).puzzle;
 
   @override
   String get title => 'Level $level';
-
-  @override
-  String get chapter => Chapters.of(level).name;
 }
 
 final class DailyMode extends GameMode {
@@ -34,11 +28,9 @@ final class DailyMode extends GameMode {
   final DateTime day;
 
   @override
-  Board boardFrom(AppServices services) => services.dailyPuzzle.boardFor(day);
+  Puzzle puzzleFrom(AppServices services) =>
+      services.dailyPuzzle.puzzleFor(day);
 
   @override
   String get title => 'Daily puzzle';
-
-  @override
-  String? get chapter => null;
 }

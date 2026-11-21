@@ -39,6 +39,11 @@ abstract final class Palette {
   static const Color danger = Color(0xFFC2391D);
   static const Color dashed = Color(0xFFAEB7CE);
   static const Color scrim = Color(0x8C1B2340);
+  static const Color heart = Color(0xFFD9472A);
+  static const Color heartEdge = Color(0xFFA3301C);
+  static const Color heartEmpty = Color(0xFFE3E8F3);
+  static const Color heartEmptyEdge = Color(0xFFCDD4E3);
+  static const Color mintEdge = Color(0xFFB5E2D7);
 
   static Color darken(Color color, double amount) =>
       Color.alphaBlend(Color.fromRGBO(0, 0, 0, amount), color);

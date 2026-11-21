@@ -56,7 +56,7 @@ void main() {
     await tester.launch(services, home: const HomeScreen());
 
     expect(find.text('Daily streak'), findsOneWidget);
-    expect(find.text('+10 waiting'), findsOneWidget);
+    expect(find.text('+10'), findsOneWidget);
     await tester.close();
   });
 }

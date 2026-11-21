@@ -4,7 +4,10 @@ enum Sound {
   bump(1),
   hint(1),
   clear(1),
-  star(3);
+  star(3),
+  tick(1),
+  fail(1),
+  boost(1);
 
   const Sound(this.variants);
 

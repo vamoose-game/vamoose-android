@@ -210,6 +210,34 @@ class PadlockGlyph extends StatelessWidget {
   }
 }
 
+class TurnGlyph extends StatelessWidget {
+  const TurnGlyph({super.key, required this.size, this.color = Palette.ink});
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: Size.square(size),
+      painter: _IconPainter(color, (path) {
+        path
+          ..moveTo(21, 12)
+          ..arcToPoint(
+            const Offset(12, 3),
+            radius: const Radius.circular(9),
+            largeArc: true,
+          )
+          ..cubicTo(14.52, 3, 16.93, 4, 18.74, 5.74)
+          ..lineTo(21, 8)
+          ..moveTo(21, 3)
+          ..lineTo(21, 8)
+          ..lineTo(16, 8);
+      }),
+    );
+  }
+}
+
 class _IconPainter extends CustomPainter {
   _IconPainter(this.color, this.trace);
 

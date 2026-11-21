@@ -14,6 +14,9 @@ class AudioPlayerSoundEffects implements SoundEffects {
     Sound.hint: 1,
     Sound.clear: 1,
     Sound.star: 1,
+    Sound.tick: 2,
+    Sound.fail: 1,
+    Sound.boost: 1,
   };
 
   final Map<(Sound, int), _Channel> _channels;

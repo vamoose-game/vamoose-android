@@ -31,6 +31,8 @@ class VamooseApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: services.settings),
         ChangeNotifierProvider.value(value: services.progress),
         ChangeNotifierProvider.value(value: services.hints),
+        ChangeNotifierProvider.value(value: services.extraTime),
+        ChangeNotifierProvider.value(value: services.lives),
         ChangeNotifierProvider.value(value: services.coins),
         ChangeNotifierProvider.value(value: services.streak),
         ChangeNotifierProvider.value(value: services.daily),

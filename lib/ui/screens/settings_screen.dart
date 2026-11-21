@@ -5,11 +5,7 @@ import '../../app/app_info.dart';
 import '../../app/app_services.dart';
 import '../../services/purchases/purchase_service.dart';
 import '../../state/ad_free_controller.dart';
-import '../../state/coin_wallet.dart';
-import '../../state/daily_controller.dart';
-import '../../state/progress_controller.dart';
 import '../../state/settings_controller.dart';
-import '../../state/streak_controller.dart';
 import '../../state/theme_controller.dart';
 import '../navigation.dart';
 import '../theme/app_text.dart';
@@ -20,24 +16,20 @@ import '../widgets/surface_card.dart';
 import '../widgets/toggle_switch.dart';
 import '../widgets/toast.dart';
 import 'how_to_play_screen.dart';
-import 'theme_shop_screen.dart';
+import 'store_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   Future<void> _confirmReset(BuildContext context) async {
-    final progress = context.read<ProgressController>();
-    final daily = context.read<DailyController>();
-    final coins = context.read<CoinWallet>();
-    final streak = context.read<StreakController>();
-    final themes = context.read<ThemeController>();
+    final services = context.read<AppServices>();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Palette.white,
         title: const Text('Reset progress?', style: AppText.heading),
         content: const Text(
-          'Stars, unlocked levels, coins, themes and your daily streak will be cleared.',
+          'Stars, coins, items, themes and streak go back to the start.',
           style: AppText.body,
         ),
         actions: [
@@ -59,22 +51,25 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
     if (confirmed ?? false) {
-      await progress.reset();
-      await daily.reset();
-      await coins.reset();
-      await streak.reset();
-      await themes.reset();
+      await services.progress.reset();
+      await services.daily.reset();
+      await services.coins.reset();
+      await services.streak.reset();
+      await services.themes.reset();
+      await services.lives.reset();
+      await services.hints.reset();
+      await services.extraTime.reset();
     }
   }
 
   Future<void> _buyRemoveAds(BuildContext context) async {
     final outcome = await context.read<AppServices>().purchases.buyRemoveAds();
     final message = switch (outcome) {
-      PurchaseOutcome.purchased => 'Ads removed. Thank you!',
-      PurchaseOutcome.pending => 'Payment pending. Ads go away once it clears.',
+      PurchaseOutcome.purchased => 'Ads removed. Thanks!',
+      PurchaseOutcome.pending => 'Payment pending',
       PurchaseOutcome.canceled => null,
-      PurchaseOutcome.failed => 'Purchase did not go through. Try again.',
-      PurchaseOutcome.unavailable => 'The store is not available right now.',
+      PurchaseOutcome.failed => 'Purchase failed',
+      PurchaseOutcome.unavailable => 'Store unavailable',
     };
     if (message != null && context.mounted) {
       Toast.show(context, message);
@@ -89,9 +84,7 @@ class SettingsScreen extends StatelessWidget {
     if (context.mounted) {
       Toast.show(
         context,
-        restored
-            ? 'Purchase restored. Ads removed.'
-            : 'No purchase to restore.',
+        restored ? 'Purchase restored' : 'Nothing to restore',
       );
     }
   }
@@ -150,9 +143,7 @@ class SettingsScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  onTap: () =>
-                      Navigator.of(context)
-                          .push(Navigation.page<void>(const ThemeShopScreen())),
+                  onTap: () => Navigation.store(context, tab: StoreTab.themes),
                 ),
               ],
             ),

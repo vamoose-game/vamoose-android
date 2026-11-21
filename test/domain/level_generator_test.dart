@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vamoose/domain/board.dart';
+import 'package:vamoose/domain/level.dart';
 import 'package:vamoose/domain/level_codec.dart';
 import 'package:vamoose/domain/level_generator.dart';
 import 'package:vamoose/domain/level_spec.dart';
@@ -46,7 +47,7 @@ void main() {
     final first = generator.generate(spec, Random(41));
     final second = generator.generate(spec, Random(41));
 
-    expect(LevelCodec.encode([first]), LevelCodec.encode([second]));
+    expect(LevelCodec.encodeBoard(first), LevelCodec.encodeBoard(second));
   });
 
   test('rejects impossible block counts', () {
@@ -100,10 +101,10 @@ void main() {
       Random(9),
     );
 
-    final decoded = LevelCodec.decode(LevelCodec.encode([board])).single.board;
+    final decoded = LevelCodec.decodeBoard(LevelCodec.encodeBoard(board));
 
     expect(locksOf(decoded), hasLength(2));
-    expect(LevelCodec.encode([decoded]), LevelCodec.encode([board]));
+    expect(LevelCodec.encodeBoard(decoded), LevelCodec.encodeBoard(board));
   });
 
   test('codec round trips a board', () {
@@ -112,9 +113,17 @@ void main() {
       Random(3),
     );
 
-    final decoded = LevelCodec.decode(LevelCodec.encode([board])).single;
+    final decoded = LevelCodec.decode(
+      LevelCodec.encode([
+        Level(number: 1, board: board, timeLimit: const Duration(seconds: 12)),
+      ]),
+    ).single;
 
     expect(decoded.number, 1);
-    expect(LevelCodec.encode([decoded.board]), LevelCodec.encode([board]));
+    expect(decoded.timeLimit, const Duration(seconds: 12));
+    expect(
+      LevelCodec.encodeBoard(decoded.board),
+      LevelCodec.encodeBoard(board),
+    );
   });
 }

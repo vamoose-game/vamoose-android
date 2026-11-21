@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:vamoose/domain/board.dart';
 import 'package:vamoose/domain/chapter.dart';
 import 'package:vamoose/domain/chapters.dart';
+import 'package:vamoose/domain/level.dart';
 import 'package:vamoose/domain/level_codec.dart';
 import 'package:vamoose/domain/level_generator.dart';
 import 'package:vamoose/domain/level_spec.dart';
@@ -47,8 +48,16 @@ void main() {
           Random(chapter.firstLevel + step),
         ),
   ];
-  File('assets/levels/levels.json')
-      .writeAsStringSync(LevelCodec.encode(boards));
+  File('assets/levels/levels.json').writeAsStringSync(
+    LevelCodec.encode([
+      for (final (index, board) in boards.indexed)
+        Level(
+          number: index + 1,
+          board: board,
+          timeLimit: LevelCodec.defaultTimeLimit,
+        ),
+    ]),
+  );
   stdout.writeln('Generated ${boards.length} levels');
 }
 

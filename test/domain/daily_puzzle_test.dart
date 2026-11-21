@@ -18,14 +18,17 @@ void main() {
     final morning = daily.boardFor(DateTime(2026, 11, 15, 8));
     final evening = daily.boardFor(DateTime(2026, 11, 15, 22));
 
-    expect(LevelCodec.encode([morning]), LevelCodec.encode([evening]));
+    expect(LevelCodec.encodeBoard(morning), LevelCodec.encodeBoard(evening));
   });
 
   test('next day gives a new puzzle', () {
     final today = daily.boardFor(DateTime(2026, 11, 15));
     final tomorrow = daily.boardFor(DateTime(2026, 11, 16));
 
-    expect(LevelCodec.encode([today]), isNot(LevelCodec.encode([tomorrow])));
+    expect(
+      LevelCodec.encodeBoard(today),
+      isNot(LevelCodec.encodeBoard(tomorrow)),
+    );
   });
 
   test('a year of daily puzzles is solvable', () {

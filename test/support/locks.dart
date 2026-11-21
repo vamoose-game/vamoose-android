@@ -9,17 +9,23 @@ List<Lock> locksOf(Board board) => [
     },
 ];
 
+/// Plays every block but the key, one legal move at a time in rounds, and
+/// says whether the locked block's path is clear once nothing else can go.
 bool holdsBack(Board board, Lock lock) {
   var current = board;
   while (true) {
-    final free = current.movableBlocks
-        .where((block) => block.id != lock.keyId)
-        .toList();
-    if (free.isEmpty) {
+    final round = [
+      for (final block in current.movableBlocks)
+        if (block.id != lock.keyId) block.id,
+    ];
+    if (round.isEmpty) {
       return current.blockerOf(current.blockById(lock.blockId)) == null;
     }
-    for (final block in free) {
-      current = current.without(block.id);
+    for (final id in round) {
+      final block = current.blockById(id);
+      if (current.canLeave(block)) {
+        current = current.without(id);
+      }
     }
   }
 }

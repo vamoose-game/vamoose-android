@@ -142,11 +142,6 @@ class _Choose extends StatelessWidget {
             const CoinChip(height: 40),
           ],
         ),
-        const SizedBox(height: 10),
-        Text(
-          'A hint lights up a block that can go and shows its path.',
-          style: AppText.body.copyWith(fontSize: 17, height: 1.45),
-        ),
         const SizedBox(height: 18),
         if (affordable)
           KeyButton(
@@ -175,7 +170,7 @@ class _Choose extends StatelessWidget {
               borderRadius: BorderRadius.circular(22),
             ),
             child: Text(
-              'Not enough coins (a hint is ${Economy.hintPrice})',
+              'Not enough coins',
               style: AppText.bodyStrong.copyWith(color: Palette.slate),
             ),
           ),
@@ -192,10 +187,7 @@ class _Choose extends StatelessWidget {
               children: [
                 Icon(Icons.play_circle_outline_rounded),
                 SizedBox(width: 10),
-                Text(
-                  'Watch a short video: free hint',
-                  style: TextStyle(fontSize: 17),
-                ),
+                Text('Free with a video', style: TextStyle(fontSize: 17)),
               ],
             ),
           ),
@@ -227,7 +219,7 @@ class _Loading extends StatelessWidget {
             ),
           ),
           SizedBox(height: 18),
-          Text('Loading video…', style: AppText.heading),
+          Text('Loading…', style: AppText.heading),
         ],
       ),
     );
@@ -269,12 +261,6 @@ class _Unavailable extends StatelessWidget {
           style: AppText.title.copyWith(fontSize: 26),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 8),
-        Text(
-          'Check your internet and try again in a moment.',
-          style: AppText.body.copyWith(fontSize: 17),
-          textAlign: TextAlign.center,
-        ),
         const SizedBox(height: 18),
         KeyButton(
           tone: KeyTone.soft,
@@ -283,7 +269,7 @@ class _Unavailable extends StatelessWidget {
           child: const Text('Try again', style: TextStyle(fontSize: 18)),
         ),
         const SizedBox(height: 10),
-        _TextKey(text: 'Back to the puzzle', onPressed: onClose),
+        _TextKey(text: 'Back', onPressed: onClose),
       ],
     );
   }

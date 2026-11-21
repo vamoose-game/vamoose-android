@@ -2,123 +2,17 @@ import 'dart:math';
 
 import 'package:material_ui/material_ui.dart';
 
-import '../../domain/board.dart';
 import '../../domain/direction.dart';
-import '../../domain/restraint.dart';
-import '../theme/app_text.dart';
 import '../theme/motion.dart';
 import '../theme/palette.dart';
 import '../widgets/block_face.dart';
-import '../widgets/card_dialog.dart';
-import '../widgets/key_button.dart';
 import '../widgets/looping.dart';
 import 'block_marks.dart';
 
-abstract final class LocksIntro {
-  static const String id = 'locks';
-
-  static bool appliesTo(Board board) =>
-      board.restraints.any((restraint) => restraint is Lock);
-
-  static Future<void> show(BuildContext context, {required String? chapter}) =>
-      CardDialog.show<void>(
-        context,
-        label: 'Got it',
-        dismissible: false,
-        builder: (context) => _LocksCard(chapter: chapter),
-      );
-}
-
-class _LocksCard extends StatelessWidget {
-  const _LocksCard({required this.chapter});
-
-  final String? chapter;
-
-  @override
-  Widget build(BuildContext context) {
-    final where = chapter;
-    return DialogCard(
-      padding: const EdgeInsets.fromLTRB(22, 26, 22, 22),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            (where == null ? 'New' : 'New in chapter $where').toUpperCase(),
-            style: AppText.label.copyWith(
-              color: Palette.alert,
-              letterSpacing: 1.56,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Locked blocks',
-            style: AppText.title.copyWith(fontSize: 30, letterSpacing: -0.6),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 18),
-          const _LocksDemo(),
-          const SizedBox(height: 18),
-          Text(
-            "A block with a padlock can't move yet. Clear the block with the key first, then the lock opens.",
-            style: AppText.body.copyWith(fontSize: 17, height: 1.45),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 18),
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _Legend(icon: BadgeIcon.key, text: 'Key'),
-              SizedBox(width: 20),
-              _Legend(icon: BadgeIcon.padlock, text: 'Locked'),
-            ],
-          ),
-          const SizedBox(height: 18),
-          KeyButton(
-            tone: KeyTone.primary,
-            height: 62,
-            radius: 20,
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Got it',
-                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
-                ),
-                SizedBox(width: 10),
-                Icon(Icons.arrow_forward_rounded, size: 22),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Legend extends StatelessWidget {
-  const _Legend({required this.icon, required this.text});
-
-  final BadgeIcon icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        BlockBadge(icon: icon, size: 26, framed: false),
-        const SizedBox(width: 8),
-        Text(text, style: AppText.bodyStrong.copyWith(fontSize: 15)),
-      ],
-    );
-  }
-}
-
-class _LocksDemo extends StatelessWidget {
-  const _LocksDemo();
+/// The locks intro loop: the key block leaves, the padlock opens, then the
+/// locked block leaves too.
+class LocksDemo extends StatelessWidget {
+  const LocksDemo({super.key});
 
   static const double _width = 302;
   static const double _badge = 26;

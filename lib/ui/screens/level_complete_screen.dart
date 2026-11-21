@@ -103,15 +103,11 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
     super.dispose();
   }
 
-  String get _message {
-    final subject = switch (_result.mode) {
-      CampaignMode(:final level) => 'Level $level',
-      DailyMode() => 'Today\'s puzzle',
-    };
-    return _result.bumps == 0
-        ? '$subject done. No bumps at all.'
-        : '$subject done with ${Formatting.plural(_result.bumps, 'bump')}.';
-  }
+  String get _title => switch (_result.stars) {
+    3 => 'Perfect!',
+    2 => 'Great!',
+    _ => 'Cleared!',
+  };
 
   Future<void> _next() async {
     final mode = _result.mode;
@@ -153,7 +149,7 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
         _spin.forward(from: 0);
       case RewardOutcome.unavailable:
         setState(() => _doubling = _Doubling.offer);
-        Toast.show(context, 'No video right now. Try again soon.');
+        Toast.show(context, 'No video right now');
       case RewardOutcome.skipped:
         setState(() => _doubling = _Doubling.offer);
     }
@@ -201,14 +197,16 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
                         child: Column(
                           children: [
                             Text(
-                              'Board clear!',
+                              _title,
                               style: AppText.title.copyWith(fontSize: 30),
                             ),
-                            const SizedBox(height: 6),
-                            Text(
-                              _message,
-                              style: AppText.body.copyWith(fontSize: 17),
-                              textAlign: TextAlign.center,
+                            const SizedBox(height: 10),
+                            _TimeChip(
+                              label: switch (_result.mode) {
+                                CampaignMode(:final level) => 'Level $level',
+                                DailyMode() => 'Daily',
+                              },
+                              time: _result.time,
                             ),
                           ],
                         ),
@@ -358,7 +356,7 @@ class _DoubleKey extends StatelessWidget {
     return switch (doubling) {
       _Doubling.loading => const _Status(
         color: Palette.cream,
-        child: Text('Loading video…', style: TextStyle(fontSize: 17)),
+        child: Text('Loading…', style: TextStyle(fontSize: 17)),
       ),
       _Doubling.done => const _Status(
         color: Palette.mint,
@@ -502,6 +500,40 @@ class _StarRow extends StatelessWidget {
           star(1, 72, 12),
           const SizedBox(width: 8),
           star(2, 54, 0),
+        ],
+      ),
+    );
+  }
+}
+
+class _TimeChip extends StatelessWidget {
+  const _TimeChip({required this.label, required this.time});
+
+  final String label;
+  final Duration time;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = AppText.bodyStrong.copyWith(
+      color: Palette.slate,
+      fontSize: 15,
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
+    return Container(
+      height: 34,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: Palette.white,
+        borderRadius: BorderRadius.circular(17),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label, style: style),
+          const SizedBox(width: 10),
+          const Icon(Icons.timer_outlined, size: 18, color: Palette.slate),
+          const SizedBox(width: 4),
+          Text(Formatting.tenths(time), style: style),
         ],
       ),
     );

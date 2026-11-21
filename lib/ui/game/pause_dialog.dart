@@ -64,7 +64,7 @@ class _PauseCard extends StatelessWidget {
             onPressed: () => choose(PauseChoice.restart),
             child: const _Label(
               icon: Icons.restart_alt_rounded,
-              text: 'Restart level',
+              text: 'Restart',
               fontSize: 17,
             ),
           ),
@@ -113,7 +113,7 @@ class _PauseCard extends StatelessWidget {
                   icon: settings.sound
                       ? Icons.volume_up_outlined
                       : Icons.volume_off_outlined,
-                  text: settings.sound ? 'Sound on' : 'Sound off',
+                  text: 'Sound',
                   on: settings.sound,
                   onPressed: () => settings.setSound(!settings.sound),
                 ),
@@ -124,7 +124,7 @@ class _PauseCard extends StatelessWidget {
                   icon: settings.music
                       ? Icons.music_note_rounded
                       : Icons.music_off_rounded,
-                  text: settings.music ? 'Music on' : 'Music off',
+                  text: 'Music',
                   on: settings.music,
                   onPressed: () => settings.setMusic(!settings.music),
                 ),
@@ -133,7 +133,7 @@ class _PauseCard extends StatelessWidget {
               Expanded(
                 child: _ToggleKey(
                   icon: Icons.vibration_rounded,
-                  text: settings.vibration ? 'Vibration on' : 'Vibration off',
+                  text: 'Vibration',
                   on: settings.vibration,
                   onPressed: () => settings.setVibration(!settings.vibration),
                 ),
@@ -200,7 +200,7 @@ class _ToggleKey extends StatelessWidget {
       height: 76,
       radius: 18,
       padding: const EdgeInsets.symmetric(horizontal: 6),
-      semanticLabel: text,
+      semanticLabel: '$text ${on ? 'on' : 'off'}',
       onPressed: onPressed,
       child: Column(
         mainAxisSize: MainAxisSize.min,

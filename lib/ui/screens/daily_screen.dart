@@ -47,10 +47,7 @@ class _DailyScreenState extends State<DailyScreen> {
 
   Future<void> _buyFreeze() async {
     if (!await _streak.buyFreeze() && mounted) {
-      Toast.show(
-        context,
-        'You need ${Economy.freezePrice} coins for a streak freeze.',
-      );
+      Toast.show(context, 'Not enough coins');
     }
   }
 
@@ -583,12 +580,14 @@ class _TodaysPuzzle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final daily = context.watch<DailyController>();
-    final board = context.read<AppServices>().dailyPuzzle.boardFor(daily.today);
+    final puzzle = context.read<AppServices>().dailyPuzzle.puzzleFor(
+      daily.today,
+    );
     final solved = daily.isTodayCompleted;
     return KeyButton(
       height: 80,
       radius: 22,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       semanticLabel: solved
           ? 'Play today\'s puzzle again'
           : 'Play today\'s puzzle for ${Economy.dailyPuzzleReward} coins',
@@ -603,7 +602,7 @@ class _TodaysPuzzle extends StatelessWidget {
               color: Palette.well,
               borderRadius: BorderRadius.circular(15),
             ),
-            child: MiniBoard(board: board, gap: 1),
+            child: MiniBoard(board: puzzle.board, gap: 1),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -627,6 +626,20 @@ class _TodaysPuzzle extends StatelessWidget {
                           const SizedBox(width: 5),
                           Text(
                             '+${Economy.dailyPuzzleReward}',
+                            style: AppText.bodyStrong.copyWith(
+                              color: Palette.slate,
+                              fontSize: 15,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Icon(
+                            Icons.timer_outlined,
+                            size: 17,
+                            color: Palette.slate,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            Formatting.clock(puzzle.timeLimit),
                             style: AppText.bodyStrong.copyWith(
                               color: Palette.slate,
                               fontSize: 15,
@@ -686,7 +699,7 @@ class _NextPuzzleState extends State<_NextPuzzle> {
   @override
   Widget build(BuildContext context) {
     return Text(
-      'Solved · new one in ${Formatting.countdown(widget.daily.timeUntilNextPuzzle)}',
+      'Next in ${Formatting.countdown(widget.daily.timeUntilNextPuzzle)}',
       style: AppText.bodyStrong.copyWith(color: Palette.mintText, fontSize: 15),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:clock/clock.dart' as zoned;
 import 'package:vamoose/app/app_services.dart';
 import 'package:vamoose/data/level_catalog.dart';
 import 'package:vamoose/domain/daily_puzzle.dart';
@@ -17,7 +18,9 @@ import 'package:vamoose/services/sound_effects.dart';
 import 'package:vamoose/state/ad_free_controller.dart';
 import 'package:vamoose/state/coin_wallet.dart';
 import 'package:vamoose/state/daily_controller.dart';
+import 'package:vamoose/state/extra_time_wallet.dart';
 import 'package:vamoose/state/hint_wallet.dart';
+import 'package:vamoose/state/lives_controller.dart';
 import 'package:vamoose/state/progress_controller.dart';
 import 'package:vamoose/state/settings_controller.dart';
 import 'package:vamoose/state/streak_controller.dart';
@@ -118,6 +121,8 @@ class FakePurchaseService implements PurchaseService {
   }
 }
 
+final DailyPuzzle _dailyPuzzle = DailyPuzzle();
+
 LevelCatalog loadLevelCatalog() => LevelCatalog(
   LevelCodec.decode(File(LevelCatalog.assetPath).readAsStringSync()),
 );
@@ -139,10 +144,12 @@ AppServices buildTestServices({
     settings: settings,
     progress: ProgressController(memory, levelCount: levels.count),
     hints: HintWallet(memory),
+    extraTime: ExtraTimeWallet(memory, coins),
+    lives: LivesController(memory, time),
     coins: coins,
     streak: StreakController(memory, time, coins),
     daily: DailyController(memory, time),
-    dailyPuzzle: const DailyPuzzle(),
+    dailyPuzzle: _dailyPuzzle,
     feedback: GameFeedback(
       sounds: sounds ?? RecordingSounds(),
       haptics: SilentHaptics(),
@@ -155,5 +162,7 @@ AppServices buildTestServices({
     links: RecordingLinkOpener(),
     music: BackgroundMusic(FakeMusicPlayer(), settings),
     themes: ThemeController(memory, coins),
+    // testWidgets runs on fake time, and the zone's clock follows it.
+    stopwatch: () => zoned.clock.stopwatch(),
   );
 }

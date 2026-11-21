@@ -63,11 +63,6 @@ class HowToPlayScreen extends StatelessWidget {
                   children: [
                     const SizedBox(height: 4),
                     Text(
-                      'THREE THINGS TO KNOW',
-                      style: AppText.label.copyWith(color: Palette.alert),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
                       'How to play',
                       style: AppText.title.copyWith(
                         fontSize: 32,
@@ -78,19 +73,19 @@ class HowToPlayScreen extends StatelessWidget {
                     const _Step(
                       illustration: _SlideDemo(),
                       title: 'Tap a block',
-                      body: 'It slides the way its arrow points. A clear path means it leaves.',
+                      body: 'It slides the way it points.',
                     ),
                     const SizedBox(height: 12),
                     const _Step(
                       illustration: _BumpDemo(),
-                      title: 'Blocked? It bumps',
-                      body: 'The block in the way lights up. Move that one first.',
+                      title: 'Bumps cost stars',
+                      body: 'Three bumps, you’re out.',
                     ),
                     const SizedBox(height: 12),
                     const _Step(
-                      illustration: _StarsDemo(),
-                      title: 'Clear the board',
-                      body: 'No bumps earns 3 stars. You can never get stuck.',
+                      illustration: _ClockDemo(),
+                      title: 'Beat the clock',
+                      body: 'Clear the board in time.',
                     ),
                   ],
                 ),
@@ -279,6 +274,19 @@ class _BumpDemo extends StatelessWidget {
                 ),
               ),
             ),
+            Positioned(
+              right: 6,
+              top: 4,
+              child: Transform.scale(
+                scale: keyframes(t, const [
+                  (0.36, 1),
+                  (0.44, 1.4),
+                  (0.52, 0.85),
+                  (0.6, 1),
+                ], curve: Curves.easeOut),
+                child: StarGlyph(size: 20, filled: t < 0.4 || t > 0.92),
+              ),
+            ),
           ],
         );
       },
@@ -286,36 +294,49 @@ class _BumpDemo extends StatelessWidget {
   }
 }
 
-class _StarsDemo extends StatelessWidget {
-  const _StarsDemo();
+class _ClockDemo extends StatelessWidget {
+  const _ClockDemo();
 
   @override
   Widget build(BuildContext context) {
-    Widget star(double size, Duration delay) => Looping(
-      period: const Duration(milliseconds: 2800),
-      delay: delay,
-      child: StarGlyph(size: size),
-      builder: (context, t, child) => Transform.scale(
-        scale: keyframes(t, const [
-          (0, 0),
-          (0.12, 1.25),
-          (0.20, 1),
-          (0.82, 1),
-          (0.94, 0),
-        ], curve: Curves.easeOut),
-        child: child,
-      ),
-    );
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        star(30, Duration.zero),
-        const SizedBox(width: 2),
-        star(36, const Duration(milliseconds: 180)),
-        const SizedBox(width: 2),
-        star(30, const Duration(milliseconds: 360)),
-      ],
+    return Looping(
+      period: const Duration(seconds: 4),
+      builder: (context, t, _) {
+        final seconds = (5 - (t * 5.5).floor()).clamp(0, 5);
+        final low = seconds <= 2;
+        return Center(
+          child: Transform.scale(
+            scale: low ? 1 + 0.06 * (1 - (t * 5.5 % 1)) : 1,
+            child: Container(
+              height: 40,
+              padding: const EdgeInsets.fromLTRB(8, 0, 11, 0),
+              decoration: BoxDecoration(
+                color: low ? Palette.orangeTint : Palette.white,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.timer_outlined,
+                    size: 18,
+                    color: low ? Palette.danger : Palette.ink,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    '0:0$seconds',
+                    style: AppText.number.copyWith(
+                      fontSize: 17,
+                      color: low ? Palette.danger : Palette.ink,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

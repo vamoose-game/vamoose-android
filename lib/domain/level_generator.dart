@@ -7,9 +7,10 @@ import 'direction.dart';
 import 'level_feature.dart';
 import 'level_spec.dart';
 import 'lock_feature.dart';
+import 'turn_feature.dart';
 
 class LevelGenerator {
-  const LevelGenerator({this.features = const [LockFeature()]});
+  const LevelGenerator({this.features = const [TurnFeature(), LockFeature()]});
 
   static const List<int> _lengthWeights = [0, 2, 5, 3];
   static const int _attempts = 200;

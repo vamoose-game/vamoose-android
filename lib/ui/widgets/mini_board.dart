@@ -25,7 +25,10 @@ class MiniBoard extends StatelessWidget {
                   width: (block.isVertical ? 1 : block.length) * cell - gap * 2,
                   height:
                       (block.isVertical ? block.length : 1) * cell - gap * 2,
-                  child: BlockFace(direction: block.direction),
+                  child: BlockFace(
+                    direction: block.direction,
+                    round: block.turns,
+                  ),
                 ),
             ],
           );

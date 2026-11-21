@@ -9,6 +9,7 @@ import '../theme/motion.dart';
 import '../theme/palette.dart';
 import '../widgets/block_face.dart';
 import 'block_marks.dart';
+import 'turn_face.dart';
 
 final Curve _fade = Interval(
   Motion.blockFadeDelay.inMilliseconds / Motion.blockLeaves.inMilliseconds,
@@ -17,10 +18,18 @@ final Curve _fade = Interval(
 );
 
 class BoardView extends StatefulWidget {
-  const BoardView({super.key, required this.session, required this.onOutcome});
+  const BoardView({
+    super.key,
+    required this.session,
+    required this.onOutcome,
+    this.onLanded,
+  });
 
   final GameSession session;
   final ValueChanged<TapOutcome> onOutcome;
+
+  /// Called once the blocks have flown in and can be tapped.
+  final VoidCallback? onLanded;
 
   @override
   State<BoardView> createState() => _BoardViewState();
@@ -50,7 +59,11 @@ class _BoardViewState extends State<BoardView>
   @override
   void initState() {
     super.initState();
-    _arrival.forward();
+    _arrival.forward().whenCompleteOrCancel(() {
+      if (mounted && _arrival.isCompleted) {
+        widget.onLanded?.call();
+      }
+    });
   }
 
   @override
@@ -65,6 +78,9 @@ class _BoardViewState extends State<BoardView>
     }
     final mark = BlockMarks.of(widget.session.board)[block.id];
     final outcome = widget.session.tap(block.id);
+    if (outcome == null) {
+      return;
+    }
     setState(() {
       switch (outcome) {
         case BlockLeaves(:final travel):
@@ -115,7 +131,10 @@ class _BoardViewState extends State<BoardView>
                     cell: cell,
                   ),
                 for (final block in [
-                  ...board.blocks.where((block) => marks[block.id] == null),
+                  ...board.blocks.where(
+                    (block) => marks[block.id] == null && !block.turns,
+                  ),
+                  ...board.blocks.where((block) => block.turns),
                   ...board.blocks.where((block) => marks[block.id] != null),
                 ])
                   _slot(
@@ -156,7 +175,16 @@ class _BoardViewState extends State<BoardView>
     final bumps = _bumps[block.id] ?? 0;
     final hits = _hits[block.id] ?? 0;
     final shakes = _shakes[block.id] ?? 0;
-    final inputs = (cell, hinted, bumps, hits, shakes, mark, locked);
+    final inputs = (
+      cell,
+      hinted,
+      bumps,
+      hits,
+      shakes,
+      mark,
+      locked,
+      block.direction,
+    );
     final cached = _slots[block.id];
     if (cached != null && cached.$1 == inputs) {
       return cached.$2;
@@ -320,7 +348,8 @@ class _PlayableBlockState extends State<_PlayableBlock>
     if (widget.hinted != oldWidget.hinted ||
         widget.mark != oldWidget.mark ||
         widget.locked != oldWidget.locked ||
-        widget.shakes != oldWidget.shakes) {
+        widget.shakes != oldWidget.shakes ||
+        widget.block.direction != oldWidget.block.direction) {
       _restingFace = _resting();
     }
     if (widget.bumpCount != oldWidget.bumpCount) {
@@ -354,22 +383,28 @@ class _PlayableBlockState extends State<_PlayableBlock>
       _face(ringColor: widget.hinted ? Palette.sun : null, ringWidth: 4);
 
   Widget _face({required Color? ringColor, required double ringWidth}) {
-    final mark = widget.mark;
+    final block = widget.block;
     return RepaintBoundary(
-      child: mark == null
-          ? BlockFace(
-              direction: widget.block.direction,
-              ringColor: ringColor,
-              ringWidth: ringWidth,
-            )
-          : MarkedFace(
-              direction: widget.block.direction,
-              mark: mark,
-              locked: widget.locked,
-              shakes: widget.shakes,
-              ringColor: ringColor,
-              ringWidth: ringWidth,
-            ),
+      child: switch (widget.mark) {
+        _ when block.turns => TurnFace(
+          direction: block.direction,
+          ringColor: ringColor,
+          ringWidth: ringWidth,
+        ),
+        final mark? => MarkedFace(
+          direction: block.direction,
+          mark: mark,
+          locked: widget.locked,
+          shakes: widget.shakes,
+          ringColor: ringColor,
+          ringWidth: ringWidth,
+        ),
+        null => BlockFace(
+          direction: block.direction,
+          ringColor: ringColor,
+          ringWidth: ringWidth,
+        ),
+      },
     );
   }
 
@@ -379,7 +414,7 @@ class _PlayableBlockState extends State<_PlayableBlock>
     return Semantics(
       button: true,
       label:
-          '${direction.name} block'
+          '${direction.name} ${widget.block.turns ? 'turning ' : ''}block'
           '${widget.locked ? ', locked: clear the block with the key first' : ''}'
           '${widget.mark?.role == MarkRole.key ? ', carries a key' : ''}'
           '${widget.hinted ? ', hint: this one can go' : ''}',
@@ -488,6 +523,7 @@ class _LeavingBlockState extends State<_LeavingBlock>
         },
         child: RepaintBoundary(
           child: switch (widget.mark) {
+            _ when widget.block.turns => TurnFace(direction: direction),
             final mark? => MarkedFace(
               direction: direction,
               mark: mark,

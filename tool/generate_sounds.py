@@ -124,6 +124,23 @@ def star(freq):
     return finish(reverb(bell(freq, 0.8, 0.3), seconds=0.9, wet=0.25), 0.5)
 
 
+def tick():
+    t = timeline(0.08)
+    knock = np.sin(2 * np.pi * 1760 * t) * envelope(t, 0.0005, 0.01)
+    wood = lowpass(noise(0.08, 13), 3000) * envelope(t, 0.0003, 0.004)
+    return finish(knock + 0.4 * wood, 0.28)
+
+
+def fail():
+    notes = place([(0, pluck(392.00, 0.8, 0.3, 0.15)), (0.16, pluck(293.66, 1.0, 0.42, 0.12))], 1.3)
+    return finish(reverb(lowpass(notes, 2200), seconds=1.0, wet=0.22), 0.55)
+
+
+def boost():
+    notes = place([(0, bell(987.77, 0.5, 0.2)), (0.06, bell(1318.51, 0.6, 0.25)), (0.12, bell(1975.53, 0.7, 0.3))], 0.9)
+    return finish(reverb(notes, seconds=0.8, wet=0.25), 0.45)
+
+
 def main():
     for old in OUT.glob('*.wav'):
         old.unlink()
@@ -135,6 +152,9 @@ def main():
     write('clear', clear())
     for index, freq in enumerate(STARS):
         write(f'star_{index}', star(freq))
+    write('tick', tick())
+    write('fail', fail())
+    write('boost', boost())
 
 
 if __name__ == '__main__':

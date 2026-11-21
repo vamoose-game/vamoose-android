@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../domain/direction.dart';
 import '../../state/progress_controller.dart';
 import '../../state/streak_controller.dart';
+import '../formatting.dart';
 import '../game/game_mode.dart';
 import '../navigation.dart';
 import '../theme/app_text.dart';
@@ -13,6 +14,7 @@ import '../theme/palette.dart';
 import '../widgets/block_face.dart';
 import '../widgets/entrance.dart';
 import '../widgets/fit_to_space.dart';
+import '../widgets/lives_chip.dart';
 import '../widgets/glyphs.dart';
 import '../widgets/key_button.dart';
 import '../widgets/logo.dart';
@@ -22,7 +24,6 @@ import '../widgets/surface_card.dart';
 import '../widgets/tap_ring.dart';
 import 'daily_screen.dart';
 import 'settings_screen.dart';
-import 'theme_shop_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -41,12 +42,13 @@ class HomeScreen extends StatelessWidget {
               Row(
                 children: [
                   const CoinChip(height: 48),
+                  const SizedBox(width: 8),
+                  const LivesChip(),
                   const Spacer(),
                   IconKey(
-                    icon: Icons.palette_outlined,
-                    semanticLabel: 'Themes',
-                    onPressed: () => Navigator.of(context)
-                        .push(Navigation.page<void>(const ThemeShopScreen())),
+                    icon: Icons.storefront_outlined,
+                    semanticLabel: 'Store',
+                    onPressed: () => Navigation.store(context),
                   ),
                   const SizedBox(width: 10),
                   IconKey(
@@ -66,22 +68,7 @@ class HomeScreen extends StatelessWidget {
                       Entrance(
                         duration: Duration(milliseconds: 600),
                         offset: Offset(0, 16),
-                        child: Column(
-                          children: [
-                            FittedBox(child: Wordmark(withKey: true)),
-                            SizedBox(height: 12),
-                            Text(
-                              'Slide every block off the board.',
-                              style: TextStyle(
-                                fontFamily: AppText.family,
-                                fontSize: 18,
-                                height: 1.4,
-                                color: Palette.slate,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
+                        child: FittedBox(child: Wordmark(withKey: true)),
                       ),
                     ],
                   ),
@@ -150,7 +137,8 @@ class HomeScreen extends StatelessWidget {
                       tint: Palette.blueTint,
                       title: 'Levels',
                       detailIcon: const StarGlyph(size: 15),
-                      detail: '${progress.totalStars} of ${progress.maxStars}',
+                      detail:
+                          '${Formatting.grouped(progress.totalStars)}/${Formatting.grouped(progress.maxStars)}',
                       onPressed: () => Navigation.levels(context),
                     ),
                   ),
@@ -169,8 +157,8 @@ class HomeScreen extends StatelessWidget {
                               size: 16,
                             ),
                       detail: streak.canCollect
-                          ? '+${streak.reward} waiting'
-                          : '${streak.count}-day streak',
+                          ? '+${streak.reward}'
+                          : Formatting.plural(streak.count, 'day'),
                       onPressed: () =>
                           Navigator.of(context)
                               .push(Navigation.page<void>(const DailyScreen())),

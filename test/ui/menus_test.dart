@@ -1,4 +1,7 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vamoose/ui/game/block_marks.dart';
+import 'package:vamoose/ui/game/turn_face.dart';
 import 'package:vamoose/ui/screens/levels_screen.dart';
 import 'package:vamoose/app/app_info.dart';
 import 'package:vamoose/ui/screens/settings_screen.dart';
@@ -14,12 +17,23 @@ void main() {
     }
     await tester.launch(services, home: const LevelsScreen());
 
-    expect(find.text('Levels 31–60 · 6×6 board'), findsOneWidget);
+    expect(find.text('31–60 · 6×6'), findsOneWidget);
     expect(find.text('PLAY'), findsOneWidget);
     expect(find.text('30 / 90'), findsOneWidget);
 
     await tester.tapAndWait(find.text('PLAY'));
     expect(find.text('Level 41'), findsOneWidget);
+
+    await tester.close();
+  });
+
+  testWidgets('chapter cards show both mechanic badges at one size', (
+    tester,
+  ) async {
+    await tester.launch(buildTestServices(), home: const LevelsScreen());
+
+    expect(tester.getSize(find.byType(BlockBadge).first), const Size(22, 22));
+    expect(tester.getSize(find.byType(TurnBadge).first), const Size(22, 22));
 
     await tester.close();
   });
@@ -37,8 +51,8 @@ void main() {
     expect(find.text('Easy mode'), findsNothing);
     expect(find.text('Bigger text'), findsNothing);
 
-    await tester.scrollUntilVisible(find.text('Version 1.0.0'), 200);
-    expect(find.text('Version 1.0.0'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Version 1.1.0'), 200);
+    expect(find.text('Version 1.1.0'), findsOneWidget);
 
     await tester.close();
   });

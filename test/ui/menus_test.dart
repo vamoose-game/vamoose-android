@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vamoose/ui/game/block_marks.dart';
+import 'package:vamoose/ui/game/countdown_face.dart';
 import 'package:vamoose/ui/game/turn_face.dart';
 import 'package:vamoose/ui/screens/levels_screen.dart';
 import 'package:vamoose/app/app_info.dart';
@@ -27,13 +28,17 @@ void main() {
     await tester.close();
   });
 
-  testWidgets('chapter cards show both mechanic badges at one size', (
+  testWidgets('chapter cards show every mechanic badge at one size', (
     tester,
   ) async {
     await tester.launch(buildTestServices(), home: const LevelsScreen());
 
     expect(tester.getSize(find.byType(BlockBadge).first), const Size(22, 22));
     expect(tester.getSize(find.byType(TurnBadge).first), const Size(22, 22));
+    expect(
+      tester.getSize(find.byType(CountdownBadge).first),
+      const Size(22, 22),
+    );
 
     await tester.close();
   });

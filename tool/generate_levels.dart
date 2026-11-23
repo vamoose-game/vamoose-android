@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:vamoose/domain/board.dart';
 import 'package:vamoose/domain/chapters.dart';
+import 'package:vamoose/domain/countdowns.dart';
 import 'package:vamoose/domain/daily_puzzle.dart';
 import 'package:vamoose/domain/economy.dart';
 import 'package:vamoose/domain/level.dart';
@@ -34,6 +35,14 @@ import 'curriculum.dart';
 /// fair at [firstTierSeconds]. Build 9 had no clock: where its own board
 /// would not be fair at [firstTierSeconds], the level takes the hardest fair
 /// board drawn instead.
+///
+/// A board with countdown blocks is drawn again when more than
+/// [countdownOutOfStars] of the crowd, with no clock, lose all their stars
+/// on it: the order has to matter, but a player who plans must get there.
+/// Working out a countdown block's way takes time, so a countdown level
+/// takes the first board that is also fair at the clock the rest of its
+/// tier needs. Then countdown blocks make their own levels harder, rather
+/// than every later tier slower.
 const int crowdSize = 400;
 const double expertShare = 0.15;
 const double threeTriesFloor = 0.9;
@@ -44,6 +53,7 @@ const String previousLevels = 'test/fixtures/levels_build9.json';
 const int draws = 12;
 const int fixedClockDraws = 60;
 const int maxExtraBlocks = 4;
+const double countdownOutOfStars = 0.08;
 
 /// First-try floor for the tier starting at [first]: gentler early on.
 double firstTryFloor(int first) => switch (first) {
@@ -79,16 +89,16 @@ void main() {
       trial.passRate >= floor &&
       trial.passWithin(3) >= threeTriesFloor &&
       trial.outOfTimeRateAmong(experts) <= expertTimeOuts;
-  double untimed(Board board, int level) => model
-      .trial(
-        board,
-        crowd,
-        experience: level - 1,
-        limit: PaceModel.giveUpAfter,
-        tries: 1,
-        seed: level,
-      )
-      .finishWithin(0.5);
+  Trial untimedTrial(Board board, int level) => model.trial(
+    board,
+    crowd,
+    experience: level - 1,
+    limit: PaceModel.giveUpAfter,
+    tries: 1,
+    seed: level,
+  );
+  double untimed(Board board, int level) =>
+      untimedTrial(board, level).finishWithin(0.5);
   final build9 = LevelCodec.decode(File(previousLevels).readAsStringSync());
   final floors = [
     for (var level = 1; level <= Chapters.levelCount; level++)
@@ -113,12 +123,26 @@ void main() {
       if (!fairAtFixedClock(build9[level - 1].board, level)) level,
   };
 
-  Board boardFor(int level) {
+  bool fairAt(Board board, int level, int seconds, double floor) => fair(
+    model.trial(
+      board,
+      crowd,
+      experience: level - 1,
+      limit: seconds.toDouble(),
+      seed: level,
+    ),
+    floor,
+  );
+
+  /// The board for [level]; a countdown board must also be fair at [clock]
+  /// seconds for the [tierFloor] first-try floor, if any board drawn is.
+  Board boardFor(int level, {required int clock, required double tierFloor}) {
     final spec = Curriculum.specFor(level);
     final floor = floors[level - 1];
     final fixedClock = fixedClocks.contains(level);
     final matchBuild9 = !unfairBefore.contains(level);
     Board? hardest;
+    Board? slower;
     var hardestTime = 0.0;
     for (var extra = 0; extra <= (fixedClock ? 0 : maxExtraBlocks); extra++) {
       final sized = _withBlocks(spec, spec.blockCount + extra);
@@ -133,18 +157,31 @@ void main() {
         } on StateError {
           break;
         }
-        final time = untimed(board, level);
-        if (!time.isFinite || fixedClock && !fairAtFixedClock(board, level)) {
+        final trial = untimedTrial(board, level);
+        final time = trial.finishWithin(0.5);
+        if (!time.isFinite ||
+            fixedClock && !fairAtFixedClock(board, level) ||
+            board.hasCountdowns &&
+                (trial.outOfStarsRate > countdownOutOfStars ||
+                    !Countdowns.canSaveAll(board))) {
           continue;
         }
         if (matchBuild9 && time >= floor) {
-          return board;
+          if (!board.hasCountdowns || fairAt(board, level, clock, tierFloor)) {
+            return board;
+          }
+          slower ??= board;
+          continue;
         }
         if (time > hardestTime) {
           hardest = board;
           hardestTime = time;
         }
       }
+    }
+    if (slower != null) {
+      stderr.writeln('Level $level needs more than $clock s');
+      return slower;
     }
     if (matchBuild9) {
       stderr.writeln(
@@ -156,14 +193,11 @@ void main() {
     return hardest ?? generator.generate(spec, Random(level));
   }
 
-  final boards = [
-    for (var level = 1; level <= Chapters.levelCount; level++) boardFor(level),
-  ];
-  stdout.writeln('Boards ready in ${clock.elapsed.inSeconds} s');
+  final boards = List<Board?>.filled(Chapters.levelCount, null);
   final trials = <(int, int), Trial>{};
   Trial trialAt(int level, int seconds) =>
       trials[(level, seconds)] ??= model.trial(
-        boards[level - 1],
+        boards[level - 1]!,
         crowd,
         experience: level - 1,
         limit: seconds.toDouble(),
@@ -172,12 +206,40 @@ void main() {
   bool fits(int level, int seconds, double floor) =>
       fair(trialAt(level, seconds), floor);
 
+  /// The fewest seconds, at least [from] and under [cap], that are fair
+  /// for every level in [range].
+  int clockFor(List<int> range, int from, int cap, double floor) {
+    var seconds = from;
+    for (final level in range) {
+      while (seconds < cap && !fits(level, seconds, floor)) {
+        seconds++;
+      }
+    }
+    while (seconds < cap &&
+        !range.every((level) => fits(level, seconds, floor))) {
+      seconds++;
+    }
+    return seconds;
+  }
+
   final limits = <int>[];
   var previous = firstTierSeconds - 1;
   for (final (first, last) in timerTiers()) {
     final floor = firstTryFloor(first);
     final range = [for (var level = first; level <= last; level++) level];
+    final counting = [
+      for (final level in range)
+        if (Curriculum.specFor(level).countdowns > 0) level,
+    ];
+    final plain = [
+      for (final level in range)
+        if (!counting.contains(level)) level,
+    ];
     var seconds = previous + 1;
+    final cap = previous + searchSpan;
+    for (final level in plain) {
+      boards[level - 1] = boardFor(level, clock: seconds, tierFloor: floor);
+    }
     if (first == 1) {
       for (final level in range.where(
         (level) => !fits(level, seconds, floor),
@@ -185,16 +247,11 @@ void main() {
         stderr.writeln('Level $level misses a floor at $seconds s');
       }
     } else {
-      final cap = previous + searchSpan;
-      for (final level in range) {
-        while (seconds < cap && !fits(level, seconds, floor)) {
-          seconds++;
-        }
+      seconds = clockFor(plain, seconds, cap, floor);
+      for (final level in counting) {
+        boards[level - 1] = boardFor(level, clock: seconds, tierFloor: floor);
       }
-      while (seconds < cap &&
-          !range.every((level) => fits(level, seconds, floor))) {
-        seconds++;
-      }
+      seconds = clockFor(range, seconds, cap, floor);
       if (seconds == cap) {
         stderr.writeln('Levels $first–$last hit the search cap');
       }
@@ -208,7 +265,7 @@ void main() {
     for (var index = 0; index < boards.length; index++)
       Level(
         number: index + 1,
-        board: boards[index],
+        board: boards[index]!,
         timeLimit: Duration(seconds: limits[index]),
       ),
   ];
@@ -220,10 +277,7 @@ void main() {
       trialAt,
       experts,
       model,
-      untimed: [
-        for (var level = 1; level <= boards.length; level++)
-          untimed(boards[level - 1], level),
-      ],
+      untimed: [for (final level in levels) untimed(level.board, level.number)],
       previous: floors,
       unfairBefore: unfairBefore,
     ).build(),
@@ -240,6 +294,8 @@ LevelSpec _withBlocks(LevelSpec spec, int blockCount) => LevelSpec(
   locks: spec.locks,
   keyDepth: spec.keyDepth,
   turners: spec.turners,
+  countdowns: spec.countdowns,
+  spare: spec.spare,
 );
 
 class _Report {
@@ -275,11 +331,14 @@ class _Report {
         'Made by `dart run tool/generate_levels.dart`. $crowdSize simulated '
         'players (`lib/domain/pace`) play each level with the practice of '
         'the levels before it. A pass is a clear before the clock ends and '
-        'before a third bump. Experts are the quickest '
-        '${_pct(expertShare)} of players. The extra-time column is the '
-        'first-try pass with the extra-time booster, a fifth of the clock '
+        'before a third miss: a bump, or a countdown block that runs out. '
+        'Experts are the quickest ${_pct(expertShare)} of players. The '
+        'extra-time column is the first-try pass with the extra-time '
+        'booster, a fifth of the clock '
         '(${Economy.fewestExtraSeconds}–${Economy.mostExtraSeconds} s).',
       )
+      ..writeln()
+      ..writeln(_countdowns())
       ..writeln()
       ..writeln(_againstBuild9())
       ..writeln();
@@ -331,6 +390,28 @@ class _Report {
       ..writeln();
   }
 
+  String _countdowns() {
+    final counting = [
+      for (final level in levels)
+        if (level.board.hasCountdowns) level,
+    ];
+    final numbers = [
+      for (final level in counting)
+        for (final block in level.board.blocks) ?block.count,
+    ];
+    final runOuts = [
+      for (final level in counting)
+        trialAt(level.number, level.timeLimit.inSeconds).averageRunOuts,
+    ];
+    final saved = counting.every((level) => Countdowns.canSaveAll(level.board));
+    return '${counting.length} levels, from level ${counting.first.number}, '
+        'have countdown blocks (${numbers.length} in all, numbers '
+        '${numbers.reduce(min)}–${numbers.reduce(max)}). '
+        '${saved ? 'Every one has' : 'Not every one has'} an order of moves '
+        'that saves them all. On those levels a first try loses '
+        '${_mean(runOuts).toStringAsFixed(2)} countdown blocks on average.';
+  }
+
   String _againstBuild9() {
     String time(double seconds) => '${seconds.toStringAsFixed(1)} s';
     final easier = [
@@ -367,14 +448,16 @@ class _Report {
       ..writeln()
       ..writeln(
         'Untimed is the median clear with no clock, and build 9 the same '
-        'for the level with that number in build 9.',
+        'for the level with that number in build 9. Countdown lists the '
+        'numbers on the countdown blocks at the start, and run-outs the '
+        'countdown blocks a first try loses on average.',
       )
       ..writeln()
       ..writeln(
-        '| Level | Blocks | Locks | Turning | Time | Untimed | Build 9 | First try | 3 tries | Bumps |',
+        '| Level | Blocks | Locks | Turning | Countdown | Time | Untimed | Build 9 | First try | 3 tries | Bumps | Run-outs |',
       )
       ..writeln(
-        '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |',
+        '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |',
       );
     for (final level in levels) {
       final seconds = level.timeLimit.inSeconds;
@@ -383,11 +466,12 @@ class _Report {
       final index = level.number - 1;
       _out.writeln(
         '| ${level.number} | ${board.blockCount} | ${board.restraints.length} '
-        '| ${_turning(board)} | $seconds s '
+        '| ${_turning(board)} | ${_countdown(board)} | $seconds s '
         '| ${untimed[index].toStringAsFixed(1)} s '
         '| ${previous[index].toStringAsFixed(1)} s '
         '| ${_pct(trial.passRate)} | ${_pct(trial.passWithin(3))} '
-        '| ${trial.averageBumps.toStringAsFixed(2)} |',
+        '| ${trial.averageBumps.toStringAsFixed(2)} '
+        '| ${board.hasCountdowns ? trial.averageRunOuts.toStringAsFixed(2) : '–'} |',
       );
     }
   }
@@ -415,6 +499,12 @@ class _Report {
 
   int _turning(Board board) =>
       board.blocks.where((block) => block.turns).length;
+
+  /// The countdown numbers on [board], smallest first, or 0.
+  String _countdown(Board board) {
+    final numbers = [for (final block in board.blocks) ?block.count]..sort();
+    return numbers.isEmpty ? '0' : numbers.join(', ');
+  }
 
   double _mean(List<double> values) =>
       values.reduce((a, b) => a + b) / values.length;

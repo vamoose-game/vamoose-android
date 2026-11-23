@@ -125,8 +125,11 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   void _onOutcome(TapOutcome outcome) {
     final feedback = _services.feedback;
     switch (outcome) {
-      case BlockLeaves():
+      case BlockLeaves(:final runOuts):
         feedback.blockLeft(streak: _session.streak);
+        if (runOuts.isNotEmpty) {
+          feedback.countdownRanOut();
+        }
         if (_session.isCleared) {
           unawaited(_finish());
         }

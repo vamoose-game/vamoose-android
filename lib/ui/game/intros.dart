@@ -6,6 +6,7 @@ import '../theme/app_text.dart';
 import '../theme/palette.dart';
 import '../widgets/card_dialog.dart';
 import '../widgets/key_button.dart';
+import 'countdown_demo.dart';
 import 'locks_demo.dart';
 import 'turns_demo.dart';
 
@@ -17,6 +18,7 @@ final class Intro {
     required this.line,
     required this.demo,
     required this.appliesTo,
+    this.legend,
   });
 
   /// Remembered in settings once seen.
@@ -25,6 +27,9 @@ final class Intro {
   final String line;
   final Widget demo;
   final bool Function(Board board) appliesTo;
+
+  /// Shown under [line], when the rule has signs to explain.
+  final Widget? legend;
 
   Future<void> show(BuildContext context) => CardDialog.show<void>(
     context,
@@ -52,12 +57,25 @@ abstract final class Intros {
     appliesTo: _hasTurns,
   );
 
-  static const List<Intro> all = [locks, turns];
+  static const Intro countdowns = Intro(
+    id: 'countdowns',
+    title: 'Countdown blocks',
+    line:
+        'Every block that leaves counts it down. Get it out before 0, or '
+        'lose a star.',
+    demo: CountdownDemo(),
+    legend: CountdownLegend(),
+    appliesTo: _hasCountdowns,
+  );
+
+  static const List<Intro> all = [locks, turns, countdowns];
 
   static bool _hasLocks(Board board) =>
       board.restraints.any((restraint) => restraint is Lock);
 
   static bool _hasTurns(Board board) => board.hasTurningBlocks;
+
+  static bool _hasCountdowns(Board board) => board.hasCountdowns;
 }
 
 class _IntroCard extends StatelessWidget {
@@ -95,6 +113,10 @@ class _IntroCard extends StatelessWidget {
             style: AppText.body.copyWith(fontSize: 17, height: 1.45),
             textAlign: TextAlign.center,
           ),
+          if (intro.legend case final legend?) ...[
+            const SizedBox(height: 14),
+            legend,
+          ],
           const SizedBox(height: 18),
           KeyButton(
             tone: KeyTone.primary,

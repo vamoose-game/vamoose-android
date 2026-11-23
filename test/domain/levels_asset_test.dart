@@ -4,11 +4,14 @@ import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vamoose/domain/board.dart';
 import 'package:vamoose/domain/chapters.dart';
+import 'package:vamoose/domain/countdown_feature.dart';
+import 'package:vamoose/domain/countdowns.dart';
 import 'package:vamoose/domain/level_codec.dart';
 import 'package:vamoose/domain/pace/pace_model.dart';
 import 'package:vamoose/domain/pace/player.dart';
 
 import '../../tool/generate_levels.dart' as tool;
+import '../support/countdowns.dart';
 import '../support/locks.dart';
 import '../support/test_services.dart';
 
@@ -20,6 +23,9 @@ void main() {
   ];
   int turnersIn(int number) =>
       levels[number - 1].board.blocks.where((block) => block.turns).length;
+  int countdownsIn(int number) => levels[number - 1].board.blocks
+      .where((block) => block.hasCountdown)
+      .length;
 
   test('ships one level per slot', () {
     expect(catalog.count, Chapters.levelCount);
@@ -81,6 +87,101 @@ void main() {
         reason: 'levels $first–${first + 9}',
       );
     }
+  });
+
+  test('countdown blocks arrive at level 26 and stay to the end', () {
+    for (var number = 1; number < 26; number++) {
+      expect(countdownsIn(number), 0, reason: 'level $number');
+    }
+    expect(countdownsIn(26), 1);
+    for (var first = 26; first <= catalog.count; first += 10) {
+      expect(
+        [
+          for (var n = first; n < min(first + 10, catalog.count + 1); n++)
+            countdownsIn(n),
+        ].any((countdowns) => countdowns > 0),
+        isTrue,
+        reason: 'levels $first–${first + 9}',
+      );
+    }
+    expect(
+      levels.where((level) => level.board.hasCountdowns).length,
+      greaterThan(100),
+    );
+    expect(levels.any((level) => countdownsIn(level.number) == 3), isTrue);
+  });
+
+  test('countdown blocks are plain blocks with a way to plan', () {
+    for (final level in levels) {
+      final board = level.board;
+      final reason = 'level ${level.number}';
+      expect(countdownsIn(level.number), lessThanOrEqualTo(3), reason: reason);
+      for (final block in board.blocks.where((block) => block.hasCountdown)) {
+        final waits = board.waitsOn(block);
+        expect(block.turns, isFalse, reason: reason);
+        expect(
+          locksOf(
+            board,
+          ).where((lock) => lock.blockId == block.id || lock.keyId == block.id),
+          isEmpty,
+          reason: reason,
+        );
+        expect(
+          block.count,
+          inInclusiveRange(CountdownFeature.fewest, CountdownFeature.most),
+          reason: reason,
+        );
+        expect(block.count, greaterThan(waits.length), reason: reason);
+        expect(
+          waits.length,
+          greaterThanOrEqualTo(CountdownFeature.fewestWaits),
+          reason: reason,
+        );
+        expect(
+          waits.where((id) => board.blockById(id).turns),
+          isEmpty,
+          reason: '$reason: a countdown block waits on a turning block',
+        );
+      }
+    }
+  });
+
+  test('every countdown block can be saved, most urgent first', () {
+    for (final level in levels.where((level) => level.board.hasCountdowns)) {
+      final reason = 'level ${level.number}';
+      expect(Countdowns.canSaveAll(level.board), isTrue, reason: reason);
+      expect(mostUrgentFirstSaves(level.board), isTrue, reason: reason);
+    }
+  });
+
+  test('with two or more countdown blocks, the order mostly matters', () {
+    var several = 0;
+    var ordered = 0;
+    for (final level in levels) {
+      final board = level.board;
+      final counting = board.blocks.where((block) => block.hasCountdown);
+      if (counting.length < 2) {
+        continue;
+      }
+      several++;
+      // Saving one first, with all it waits on, loses another.
+      final loses = counting.any(
+        (first) => counting.any((then) {
+          final firstWaits = board.waitsOn(first);
+          final thenWaits = board.waitsOn(then);
+          return first.id != then.id &&
+              !firstWaits.contains(then.id) &&
+              !thenWaits.contains(first.id) &&
+              {...firstWaits, first.id, ...thenWaits, then.id}.length >
+                  then.count!;
+        }),
+      );
+      if (loses) {
+        ordered++;
+      }
+    }
+    expect(several, greaterThan(50));
+    expect(ordered / several, greaterThan(0.8));
   });
 
   test('locks and turning blocks also share levels', () {

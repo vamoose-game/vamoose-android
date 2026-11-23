@@ -18,6 +18,8 @@ final class PaceTiming {
     this.decide = 0.12,
     this.lockGlance = 0.1,
     this.turnRead = 0.12,
+    this.countRead = 0.12,
+    this.planStep = 0.1,
     this.react = 0.12,
     this.bumpRecover = 0.6,
     this.reachBase = 0.08,
@@ -41,6 +43,13 @@ final class PaceTiming {
 
   /// Reading which way a turning block faces now.
   final double turnRead;
+
+  /// Reading the number on a countdown block.
+  final double countRead;
+
+  /// Working out, after each move, one more block in the way of the
+  /// countdown block the player works on.
+  final double planStep;
 
   /// Taking in the board after a block leaves.
   final double react;
@@ -66,7 +75,30 @@ final class TimePressure {
 enum Ending { cleared, outOfStars, outOfTime }
 
 /// How one simulated try at a board went.
-typedef Attempt = ({double seconds, int bumps, Ending ending});
+typedef Attempt = ({double seconds, int bumps, int runOuts, Ending ending});
+
+/// How likely a player is to work on the most urgent countdown block, by its
+/// slack: the moves it can spare beyond the ones it still needs.
+final class CountdownFocus {
+  const CountdownFocus({
+    this.noSlack = 0.97,
+    this.oneSpare = 0.9,
+    this.twoSpare = 0.75,
+    this.plenty = 0.5,
+  });
+
+  final double noSlack;
+  final double oneSpare;
+  final double twoSpare;
+  final double plenty;
+
+  double at(int slack) => switch (slack) {
+    <= 0 => noSlack,
+    1 => oneSpare,
+    2 => twoSpare,
+    _ => plenty,
+  };
+}
 
 /// Simulates people playing a board, one try at a time.
 ///
@@ -75,12 +107,20 @@ typedef Attempt = ({double seconds, int bumps, Ending ending});
 /// left. Each look costs time and traces the arrow's path. A clear path is
 /// tapped. A blocked one is remembered, unless the player misreads it and
 /// taps anyway: a bump, which costs a star and makes them more careful.
-/// Three bumps or the end of the clock end the try. Turning blocks are read
-/// again after every move, since they turn.
+/// Three misses (bumps and countdown blocks that run out) or the end of
+/// the clock end the try. Turning blocks are read again after every move,
+/// since they turn.
+///
+/// With countdown blocks on the board, a player mostly works on the most
+/// urgent one: they look only at it and the blocks it waits on, the more
+/// surely the less slack it has ([CountdownFocus]), less so when they slip
+/// a lot or are rushed. Otherwise they look around as usual, and a move
+/// spent elsewhere can make a countdown block run out.
 final class PaceModel {
   const PaceModel({
     this.timing = const PaceTiming(),
     this.pressure = const TimePressure(),
+    this.focus = const CountdownFocus(),
     this.maxBumps = 3,
   });
 
@@ -89,6 +129,9 @@ final class PaceModel {
 
   final PaceTiming timing;
   final TimePressure pressure;
+  final CountdownFocus focus;
+
+  /// Misses that end a try.
   final int maxBumps;
 
   Attempt play(Board board, Player player, Random random, {double? limit}) =>
@@ -225,6 +268,9 @@ final class Trial {
   double get averageBumps =>
       _first.fold(0, (sum, attempt) => sum + attempt.bumps) / people;
 
+  double get averageRunOuts =>
+      _first.fold(0, (sum, attempt) => sum + attempt.runOuts) / people;
+
   /// Seconds within which [share] of first tries clear the board (infinite
   /// when fewer ever do).
   double finishWithin(double share) {
@@ -250,9 +296,15 @@ final class _Layout {
     this.turns,
     this.holders,
     this.grid,
+    this.counts,
+    this.waits,
   ) : turners = [
         for (var index = 0; index < turns.length; index++)
           if (turns[index]) index,
+      ],
+      countdowns = [
+        for (var index = 0; index < counts.length; index++)
+          if (counts[index] > 0) index,
       ];
 
   factory _Layout.of(Board board) {
@@ -272,6 +324,14 @@ final class _Layout {
     for (final restraint in board.restraints) {
       holders[index[restraint.blockId]!] = index[restraint.holderId]!;
     }
+    final waits = [
+      for (final block in blocks)
+        block.hasCountdown
+            ? Int16List.fromList([
+                for (final id in board.waitsOn(block)) index[id]!,
+              ])
+            : Int16List(0),
+    ];
     return _Layout._(
       board.size,
       Int8List.fromList([for (final block in blocks) block.row]),
@@ -281,6 +341,8 @@ final class _Layout {
       [for (final block in blocks) block.turns],
       holders,
       grid,
+      Int8List.fromList([for (final block in blocks) block.count ?? 0]),
+      waits,
     );
   }
 
@@ -294,6 +356,13 @@ final class _Layout {
   final Int16List grid;
   final List<int> turners;
 
+  /// Each block's countdown at the start, or 0.
+  final Int8List counts;
+
+  /// For each countdown block, every block it waits on at the start.
+  final List<Int16List> waits;
+  final List<int> countdowns;
+
   int get count => rows.length;
 }
 
@@ -303,6 +372,8 @@ final class _Run {
     : limit = limit ?? PaceModel.giveUpAfter,
       grid = Int16List.fromList(layout.grid),
       alive = Uint8List(layout.count)..fillRange(0, layout.count, 1),
+      ranOut = Uint8List(layout.count),
+      plan = Uint8List(layout.count),
       known = Int16List.fromList(layout.holders),
       weights = Float64List(layout.count),
       slip = player.slip,
@@ -324,6 +395,13 @@ final class _Run {
   final Int16List grid;
   final Uint8List alive;
 
+  /// Countdown blocks that ran out.
+  final Uint8List ranOut;
+
+  /// The blocks the player works on this look: 1 for each, all 0 when they
+  /// look around freely.
+  final Uint8List plan;
+
   /// For each block, the block the player last saw in its way, or -1.
   final Int16List known;
   final Float64List weights;
@@ -333,6 +411,10 @@ final class _Run {
   int moves = 0;
   int left = 0;
   int bumps = 0;
+  int runOuts = 0;
+
+  /// The move the player last worked out the way of a countdown block on.
+  int _plannedOn = -1;
   double seconds = 0;
   int _hit = -1;
   int _steps = 0;
@@ -345,11 +427,20 @@ final class _Run {
 
   double get _slip => slip * (_hurried ? model.pressure.slip : 1);
 
+  bool get _outOfStars => bumps + runOuts >= model.maxBumps;
+
+  Attempt _end(Ending ending) => (
+    seconds: ending == Ending.outOfTime ? limit : seconds,
+    bumps: bumps,
+    runOuts: runOuts,
+    ending: ending,
+  );
+
   Attempt play() {
     seconds = timing.orient * _think;
     while (left < layout.count) {
       if (seconds > limit) {
-        return (seconds: limit, bumps: bumps, ending: Ending.outOfTime);
+        return _end(Ending.outOfTime);
       }
       final block = _pick();
       final holder = layout.holders[block];
@@ -366,7 +457,8 @@ final class _Run {
         seconds +=
             (timing.fixate +
                 timing.perCell * _steps +
-                (layout.turns[block] ? timing.turnRead : 0)) *
+                (layout.turns[block] ? timing.turnRead : 0) +
+                (_counting(block) ? timing.countRead : 0)) *
             _think;
         if (_hit >= 0) {
           known[block] = _hit;
@@ -383,7 +475,7 @@ final class _Run {
       seconds += timing.decide * _think;
       _reach(block);
       if (seconds > limit) {
-        return (seconds: limit, bumps: bumps, ending: Ending.outOfTime);
+        return _end(Ending.outOfTime);
       }
       if (blocker == null) {
         _leave(block);
@@ -391,24 +483,72 @@ final class _Run {
         bumps++;
         seconds += timing.bumpRecover * _think;
         slip *= 0.65;
-        if (bumps >= model.maxBumps) {
-          return (seconds: seconds, bumps: bumps, ending: Ending.outOfStars);
-        }
+      }
+      if (_outOfStars) {
+        return _end(Ending.outOfStars);
       }
     }
-    return (seconds: seconds, bumps: bumps, ending: Ending.cleared);
+    return _end(Ending.cleared);
+  }
+
+  /// Whether [block] still shows a countdown.
+  bool _counting(int block) =>
+      layout.counts[block] > 0 && alive[block] == 1 && ranOut[block] == 0;
+
+  /// Marks in [plan] the most urgent countdown block and every block it
+  /// still waits on, if the player works on it this look. Rolls the dice
+  /// only while a countdown block is left, so boards without one play out
+  /// exactly as before.
+  bool _focus() {
+    var urgent = -1;
+    var urgentLeft = 0;
+    var urgentNeeds = 0;
+    for (final block in layout.countdowns) {
+      if (!_counting(block)) {
+        continue;
+      }
+      final movesLeft = layout.counts[block] - moves;
+      var needs = 1;
+      for (final waited in layout.waits[block]) {
+        needs += alive[waited];
+      }
+      if (urgent < 0 ||
+          movesLeft < urgentLeft ||
+          movesLeft == urgentLeft && needs < urgentNeeds) {
+        urgent = block;
+        urgentLeft = movesLeft;
+        urgentNeeds = needs;
+      }
+    }
+    if (urgent < 0 ||
+        random.nextDouble() >=
+            model.focus.at(urgentLeft - urgentNeeds) * (1 - min(1, _slip))) {
+      return false;
+    }
+    plan.fillRange(0, plan.length, 0);
+    plan[urgent] = 1;
+    for (final waited in layout.waits[urgent]) {
+      plan[waited] = 1;
+    }
+    if (_plannedOn != moves) {
+      _plannedOn = moves;
+      seconds += timing.planStep * urgentNeeds * _think;
+    }
+    return true;
   }
 
   int _facing(int block) => layout.turns[block]
       ? (layout.facing[block] + moves) % 4
       : layout.facing[block];
 
-  /// Picks the block the player looks at next, by how eye-catching it is.
+  /// Picks the block the player looks at next, by how eye-catching it is,
+  /// among the blocks of the most urgent countdown block when they focus.
   int _pick() {
+    final focused = layout.countdowns.isNotEmpty && _focus();
     var total = 0.0;
     for (var block = 0; block < layout.count; block++) {
       var weight = 0.0;
-      if (alive[block] == 1) {
+      if (alive[block] == 1 && (!focused || plan[block] == 1)) {
         final seen = known[block];
         if (seen >= 0) {
           weight = alive[seen] == 1 ? 0.06 : 5;
@@ -508,6 +648,18 @@ final class _Run {
     for (final turner in layout.turners) {
       known[turner] = -1;
     }
-    seconds += timing.react * _think;
+    var counting = 0;
+    for (final countdown in layout.countdowns) {
+      if (_counting(countdown)) {
+        if (moves >= layout.counts[countdown]) {
+          ranOut[countdown] = 1;
+          runOuts++;
+        } else {
+          counting++;
+        }
+      }
+    }
+    // Every number left on the board has just changed: a glance at each.
+    seconds += (timing.react + timing.countRead * counting) * _think;
   }
 }

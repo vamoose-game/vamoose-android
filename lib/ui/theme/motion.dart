@@ -38,6 +38,13 @@ abstract final class Motion {
   static const Duration turnColor = Duration(milliseconds: 300);
   static const Duration orbit = Duration(seconds: 6);
   static const Duration turnsDemo = Duration(seconds: 5);
+  static const Duration countdownTick = Duration(milliseconds: 380);
+  static const Duration countdownColor = Duration(milliseconds: 250);
+  static const Duration lastMovePulse = Duration(milliseconds: 900);
+  static const Duration hurry = Duration(milliseconds: 1400);
+  static const Duration runOut = Duration(milliseconds: 800);
+  static const Duration runOutBadge = Duration(milliseconds: 650);
+  static const Duration countdownDemoStep = Duration(milliseconds: 850);
   static const Duration starLose = Duration(milliseconds: 600);
   static const Duration timerPulse = Duration(seconds: 1);
   static const Duration timerAdd = Duration(milliseconds: 700);

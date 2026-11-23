@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:vamoose/app/app_services.dart';
 import 'package:vamoose/app/vamoose_app.dart';
 import 'package:vamoose/ui/game/game_mode.dart';
+import 'package:vamoose/ui/game/intros.dart';
 import 'package:vamoose/ui/game/level_result.dart';
 import 'package:vamoose/ui/screens/daily_screen.dart';
 import 'package:vamoose/ui/screens/game_screen.dart';
@@ -102,6 +103,21 @@ void main() {
           expect(tester.takeException(), isNull, reason: '${home.runtimeType}');
           await tester.close();
         }
+      });
+
+      testWidgets('countdown intro and a countdown board', (tester) async {
+        await services.settings.markIntroSeen(Intros.locks.id);
+        await open(tester, const GameScreen(mode: CampaignMode(26)));
+        expect(find.text('Countdown blocks'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        await tester.tapAndWait(
+          find.text('Got it'),
+          const Duration(seconds: 1),
+        );
+        expect(find.text('Countdown blocks'), findsNothing);
+        expect(tester.takeException(), isNull);
+        await tester.close();
       });
 
       testWidgets('turning intro and pause', (tester) async {

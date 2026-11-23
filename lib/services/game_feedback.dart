@@ -25,6 +25,9 @@ class GameFeedback {
     _vibrate(_haptics.medium);
   }
 
+  /// A countdown block ran out: it costs a star, like a bump.
+  void countdownRanOut() => blockBumped();
+
   void hintShown() => _play(Sound.hint);
 
   void boardCleared() {

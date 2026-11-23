@@ -33,7 +33,7 @@ void main() {
       final outcome = board.tap(0);
 
       expect(outcome, isA<BlockBumps>());
-      expect((outcome as BlockBumps).blocker.id, 2);
+      expect((outcome as BlockBumps).blocker?.id, 2);
     });
 
     test('tapping does not change the board', () {
@@ -129,14 +129,14 @@ void main() {
 
       expect(outcome, isA<BlockBumps>());
       final bump = outcome as BlockBumps;
-      expect(bump.blocker.id, 1);
+      expect(bump.blocker?.id, 1);
       expect(bump.restraint, isA<Lock>());
     });
 
     test('a path bump has no restraint', () {
       final outcome = lockedBoard().tap(1);
 
-      expect((outcome as BlockBumps).blocker.id, 2);
+      expect((outcome as BlockBumps).blocker?.id, 2);
       expect(outcome.restraint, isNull);
     });
 

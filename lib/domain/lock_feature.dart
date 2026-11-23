@@ -101,8 +101,9 @@ class LockFeature implements LevelFeature {
   }
 
   /// Moves the blocks in [ids] off one by one, skipping any that a turning
-  /// block has turned into a wall by its turn, so every move is one a player
-  /// could make. The first always goes, so each round makes progress.
+  /// block has turned into a wall by its turn, or that left with its twin,
+  /// so every move is one a player could make. The first always goes, so
+  /// each round makes progress.
   static Board _playAll(
     Board board,
     List<int> ids,
@@ -110,7 +111,7 @@ class LockFeature implements LevelFeature {
   ) {
     var current = board;
     for (final id in ids) {
-      if (current.canLeave(current.blockById(id))) {
+      if (current.contains(id) && current.canLeave(current.blockById(id))) {
         moved(id);
         current = current.without(id);
       }

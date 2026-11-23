@@ -7,9 +7,9 @@ import 'level_spec.dart';
 
 /// Puts a countdown on up to [LevelSpec.countdowns] blocks.
 ///
-/// A countdown block is a plain block (no lock, key or turn) that waits on
-/// at least [fewestWaits] blocks and on no turning block, so its way out
-/// never depends on timing. Blocks that wait on [deepWaits] or more are
+/// A countdown block is a plain block (no lock, key, turn, ice or twin)
+/// that waits on at least [fewestWaits] blocks and on none that turns, is
+/// frozen or has a twin, so its way out never depends on timing. Blocks that wait on [deepWaits] or more are
 /// tried first, so there is a way to plan.
 ///
 /// Taking the most urgent countdown block first, each one's number is the
@@ -59,8 +59,7 @@ class CountdownFeature implements LevelFeature {
   }
 
   bool _canCount(Board board, Block block) {
-    if (block.turns ||
-        block.hasCountdown ||
+    if (_special(board, block) ||
         board.restraints.any(
           (restraint) =>
               restraint.blockId == block.id || restraint.holderId == block.id,
@@ -69,8 +68,16 @@ class CountdownFeature implements LevelFeature {
     }
     final waits = board.waitsOn(block);
     return waits.length >= fewestWaits &&
-        !waits.any((id) => board.blockById(id).turns);
+        !waits.any((id) => _special(board, board.blockById(id)));
   }
+
+  /// A block whose way out does not only wait on the blocks in front of it:
+  /// it turns, is frozen, leaves with a twin, or counts down already.
+  static bool _special(Board board, Block block) =>
+      block.turns ||
+      block.isFrozen ||
+      block.hasCountdown ||
+      board.twinOf(block) != null;
 
   /// Numbers for [wanted] blocks from [pool], preferring a pick where the
   /// order matters; null when no pick fits.

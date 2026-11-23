@@ -94,10 +94,12 @@ class _BoardViewState extends State<BoardView>
           }
         case BlockBumps(:final blocker, :final restraint):
           _bumps[block.id] = (_bumps[block.id] ?? 0) + 1;
-          _hits[blocker.id] = (_hits[blocker.id] ?? 0) + 1;
-          if (restraint != null) {
-            _shakes[block.id] = (_shakes[block.id] ?? 0) + 1;
-            _shakes[blocker.id] = (_shakes[blocker.id] ?? 0) + 1;
+          if (blocker != null) {
+            _hits[blocker.id] = (_hits[blocker.id] ?? 0) + 1;
+            if (restraint != null) {
+              _shakes[block.id] = (_shakes[block.id] ?? 0) + 1;
+              _shakes[blocker.id] = (_shakes[blocker.id] ?? 0) + 1;
+            }
           }
       }
     });

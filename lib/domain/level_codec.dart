@@ -7,9 +7,9 @@ import 'level.dart';
 import 'restraint.dart';
 
 /// Reads and writes `assets/levels/levels.json`: one entry per level, as
-/// `{"size":6,"time":12,"blocks":[[row,column,length,"u"]],"locks":[[lockedId,keyId]],"turns":[id],"counts":[[id,count]]}`.
-/// Block ids are their positions in `blocks`; `locks`, `turns` and `counts`
-/// are left out when empty.
+/// `{"size":6,"time":12,"blocks":[[row,column,length,"u"]],"locks":[[lockedId,keyId]],"turns":[id],"counts":[[id,count]],"ice":[[id,layers]],"twins":[[id,id]]}`.
+/// Block ids are their positions in `blocks`; `locks`, `turns`, `counts`,
+/// `ice` and `twins` are left out when empty.
 abstract final class LevelCodec {
   static const Duration defaultTimeLimit = Duration(seconds: 60);
 
@@ -65,19 +65,42 @@ abstract final class LevelCodec {
           for (final block in blocks)
             if (block.count case final count?) [index[block.id]!, count],
         ],
+      if (blocks.any((block) => block.isFrozen))
+        'ice': [
+          for (final block in blocks)
+            if (block.isFrozen) [index[block.id]!, block.ice],
+        ],
+      ..._encodeTwins(board.twins, index),
     };
+  }
+
+  static Map<String, Object> _encodeTwins(
+    List<TwinPair> twins,
+    Map<int, int> index,
+  ) {
+    final pairs = [
+      for (final pair in twins)
+        // A pair that has left is not written.
+        if ((index[pair.first], index[pair.second]) case (
+          final first?,
+          final second?,
+        ))
+          [first, second],
+    ];
+    return {if (pairs.isNotEmpty) 'twins': pairs};
   }
 
   static Board decodeBoard(Map<String, dynamic> json) {
     final rows = json['blocks'] as List<dynamic>;
     final locks = json['locks'] as List<dynamic>? ?? const [];
     final turns = {...?(json['turns'] as List<dynamic>?)?.cast<int>()};
-    final counts = {
+    Map<int, int> pairsIn(String key) => {
       for (final pair
-          in (json['counts'] as List<dynamic>? ?? const [])
-              .cast<List<dynamic>>())
+          in (json[key] as List<dynamic>? ?? const []).cast<List<dynamic>>())
         pair[0] as int: pair[1] as int,
     };
+    final counts = pairsIn('counts');
+    final ice = pairsIn('ice');
     return Board(
       size: json['size'] as int,
       blocks: [
@@ -87,11 +110,18 @@ abstract final class LevelCodec {
             rows[id] as List<dynamic>,
             turns: turns.contains(id),
             count: counts[id],
+            ice: ice[id] ?? 0,
           ),
       ],
       restraints: [
         for (final pair in locks.cast<List<dynamic>>())
           Lock(blockId: pair[0] as int, keyId: pair[1] as int),
+      ],
+      twins: [
+        for (final pair
+            in (json['twins'] as List<dynamic>? ?? const [])
+                .cast<List<dynamic>>())
+          (first: pair[0] as int, second: pair[1] as int),
       ],
     );
   }
@@ -118,6 +148,7 @@ abstract final class LevelCodec {
     List<dynamic> row, {
     required bool turns,
     int? count,
+    int ice = 0,
   }) => Block(
     id: id,
     row: row[0] as int,
@@ -126,5 +157,6 @@ abstract final class LevelCodec {
     direction: Direction.fromCode(row[3] as String),
     turns: turns,
     count: count,
+    ice: ice,
   );
 }

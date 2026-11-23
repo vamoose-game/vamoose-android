@@ -2,7 +2,7 @@
 
 Slide every block off the board before the clock runs out. Tap a block, it slides the way its arrow points.
 
-Android · Flutter · no backend · version 1.2.0
+Android · Flutter · no backend · version 1.3.0
 
 ## Game
 

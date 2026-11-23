@@ -70,8 +70,8 @@ void main() {
     expect(find.text('Easy mode'), findsNothing);
     expect(find.text('Bigger text'), findsNothing);
 
-    await tester.scrollUntilVisible(find.text('Version 1.2.0'), 200);
-    expect(find.text('Version 1.2.0'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Version 1.3.0'), 200);
+    expect(find.text('Version 1.3.0'), findsOneWidget);
 
     await tester.close();
   });

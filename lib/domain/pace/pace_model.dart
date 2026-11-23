@@ -17,6 +17,7 @@ final class PaceTiming {
     this.perCell = 0.04,
     this.decide = 0.12,
     this.lockGlance = 0.1,
+    this.iceGlance = 0.1,
     this.turnRead = 0.12,
     this.countRead = 0.12,
     this.planStep = 0.1,
@@ -40,6 +41,9 @@ final class PaceTiming {
 
   /// Seeing that a padlocked block still has its key on the board.
   final double lockGlance;
+
+  /// Seeing that a block is still frozen.
+  final double iceGlance;
 
   /// Reading which way a turning block faces now.
   final double turnRead;
@@ -109,7 +113,9 @@ final class CountdownFocus {
 /// taps anyway: a bump, which costs a star and makes them more careful.
 /// Three misses (bumps and countdown blocks that run out) or the end of
 /// the clock end the try. Turning blocks are read again after every move,
-/// since they turn.
+/// since they turn. Ice is seen at a glance, like a padlock, and a block
+/// whose ice just broke catches the eye. A twin needs both ways traced,
+/// and both leave on one tap.
 ///
 /// With countdown blocks on the board, a player mostly works on the most
 /// urgent one: they look only at it and the blocks it waits on, the more
@@ -302,6 +308,9 @@ final class _Layout {
     this.grid,
     this.counts,
     this.waits,
+    this.ice,
+    this.chilled,
+    this.twins,
   ) : turners = [
         for (var index = 0; index < turns.length; index++)
           if (turns[index]) index,
@@ -336,6 +345,22 @@ final class _Layout {
               ])
             : Int16List(0),
     ];
+    final chilled = [for (final _ in blocks) <int>[]];
+    for (final block in blocks.where((block) => block.isFrozen)) {
+      for (final id in board.neighboursOf(block)) {
+        chilled[index[id]!].add(index[block.id]!);
+      }
+    }
+    final twins = Int16List(blocks.length)..fillRange(0, blocks.length, -1);
+    for (final pair in board.twins) {
+      if ((index[pair.first], index[pair.second]) case (
+        final first?,
+        final second?,
+      )) {
+        twins[first] = second;
+        twins[second] = first;
+      }
+    }
     return _Layout._(
       board.size,
       Int8List.fromList([for (final block in blocks) block.row]),
@@ -347,6 +372,9 @@ final class _Layout {
       grid,
       Int8List.fromList([for (final block in blocks) block.count ?? 0]),
       waits,
+      Int8List.fromList([for (final block in blocks) block.ice]),
+      [for (final list in chilled) Int16List.fromList(list)],
+      twins,
     );
   }
 
@@ -367,6 +395,14 @@ final class _Layout {
   final List<Int16List> waits;
   final List<int> countdowns;
 
+  /// Each block's layers of ice at the start, and for each block the
+  /// frozen blocks next to it, whose ice cracks when it leaves.
+  final Int8List ice;
+  final List<Int16List> chilled;
+
+  /// Each block's twin, or -1.
+  final Int16List twins;
+
   int get count => rows.length;
 }
 
@@ -378,6 +414,7 @@ final class _Run {
       alive = Uint8List(layout.count)..fillRange(0, layout.count, 1),
       ranOut = Uint8List(layout.count),
       plan = Uint8List(layout.count),
+      ice = Int8List.fromList(layout.ice),
       known = Int16List.fromList(layout.holders),
       weights = Float64List(layout.count),
       slip = player.slip,
@@ -401,6 +438,12 @@ final class _Run {
 
   /// Countdown blocks that ran out.
   final Uint8List ranOut;
+
+  /// Layers of ice left on each block.
+  final Int8List ice;
+
+  /// In [known]: the player saw this block is frozen.
+  static const int _sawIce = -2;
 
   /// The blocks the player works on this look: 1 for each, all 0 when they
   /// look around freely.
@@ -448,8 +491,16 @@ final class _Run {
       }
       final block = _pick();
       final holder = layout.holders[block];
+      final twin = layout.twins[block];
       int? blocker;
-      if (holder >= 0 && alive[holder] == 1) {
+      if (ice[block] > 0) {
+        seconds += timing.iceGlance * _think;
+        known[block] = _sawIce;
+        if (random.nextDouble() >= _slip * 0.15) {
+          continue;
+        }
+        blocker = block;
+      } else if (holder >= 0 && alive[holder] == 1) {
         seconds += timing.lockGlance * _think;
         known[block] = holder;
         if (random.nextDouble() >= _slip * 0.15) {
@@ -474,6 +525,23 @@ final class _Run {
             continue;
           }
           blocker = _hit;
+        } else if (twin >= 0 && alive[twin] == 1) {
+          // Its twin leaves too: trace that way as well.
+          _walk(twin, _facing(twin));
+          seconds += (timing.fixate + timing.perCell * _steps) * _think;
+          final stuck = ice[twin] > 0
+              ? twin
+              : layout.holders[twin] >= 0 && alive[layout.holders[twin]] == 1
+              ? layout.holders[twin]
+              : _hit;
+          if (stuck >= 0) {
+            known[block] = stuck == twin ? _sawIce : stuck;
+            final misread = _slip * min(1.6, 0.35 + 0.2 * _steps);
+            if (random.nextDouble() >= misread) {
+              continue;
+            }
+            blocker = stuck;
+          }
         }
       }
       seconds += timing.decide * _think;
@@ -483,6 +551,9 @@ final class _Run {
       }
       if (blocker == null) {
         _leave(block);
+        if (twin >= 0 && alive[twin] == 1) {
+          _leave(twin);
+        }
       } else {
         bumps++;
         seconds += timing.bumpRecover * _think;
@@ -554,7 +625,9 @@ final class _Run {
       var weight = 0.0;
       if (alive[block] == 1 && (!focused || plan[block] == 1)) {
         final seen = known[block];
-        if (seen >= 0) {
+        if (seen == _sawIce) {
+          weight = ice[block] > 0 ? 0.06 : 5;
+        } else if (seen >= 0) {
           weight = alive[seen] == 1 ? 0.06 : 5;
         } else {
           weight =
@@ -651,6 +724,11 @@ final class _Run {
     }
     for (final turner in layout.turners) {
       known[turner] = -1;
+    }
+    for (final frozen in layout.chilled[block]) {
+      if (ice[frozen] > 0) {
+        ice[frozen]--;
+      }
     }
     var counting = 0;
     for (final countdown in layout.countdowns) {

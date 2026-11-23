@@ -7,8 +7,10 @@ import '../theme/palette.dart';
 import '../widgets/card_dialog.dart';
 import '../widgets/key_button.dart';
 import 'countdown_demo.dart';
+import 'ice_demo.dart';
 import 'locks_demo.dart';
 import 'turns_demo.dart';
+import 'twins_demo.dart';
 
 /// A rule shown once, the first time a level uses it.
 final class Intro {
@@ -68,7 +70,24 @@ abstract final class Intros {
     appliesTo: _hasCountdowns,
   );
 
-  static const List<Intro> all = [locks, turns, countdowns];
+  static const Intro ice = Intro(
+    id: 'ice',
+    title: 'Frozen blocks',
+    line: 'Ice holds them. When a block next to one leaves, the ice breaks.',
+    demo: IceDemo(),
+    appliesTo: _hasIce,
+  );
+
+  static const Intro twins = Intro(
+    id: 'twins',
+    title: 'Twin blocks',
+    line: 'Twins leave together. Clear both ways, then tap one.',
+    demo: TwinsDemo(),
+    legend: TwinsLegend(),
+    appliesTo: _hasTwins,
+  );
+
+  static const List<Intro> all = [locks, turns, ice, twins, countdowns];
 
   static bool _hasLocks(Board board) =>
       board.restraints.any((restraint) => restraint is Lock);
@@ -76,6 +95,10 @@ abstract final class Intros {
   static bool _hasTurns(Board board) => board.hasTurningBlocks;
 
   static bool _hasCountdowns(Board board) => board.hasCountdowns;
+
+  static bool _hasIce(Board board) => board.hasIce;
+
+  static bool _hasTwins(Board board) => board.hasTwins;
 }
 
 class _IntroCard extends StatelessWidget {

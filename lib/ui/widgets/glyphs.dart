@@ -238,11 +238,95 @@ class TurnGlyph extends StatelessWidget {
   }
 }
 
+/// Two chain links: a twin block's badge.
+class LinkGlyph extends StatelessWidget {
+  const LinkGlyph({super.key, required this.size, this.color = Palette.ink});
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    const radius = Radius.circular(5);
+    return CustomPaint(
+      size: Size.square(size),
+      painter: _IconPainter(color, (path) {
+        path
+          ..moveTo(10, 13)
+          ..arcToPoint(
+            const Offset(17.54, 13.54),
+            radius: radius,
+            clockwise: false,
+          )
+          ..lineTo(20.54, 10.54)
+          ..arcToPoint(
+            const Offset(13.47, 3.47),
+            radius: radius,
+            clockwise: false,
+          )
+          ..lineTo(11.75, 5.18)
+          ..moveTo(14, 11)
+          ..arcToPoint(
+            const Offset(6.46, 10.46),
+            radius: radius,
+            clockwise: false,
+          )
+          ..lineTo(3.46, 13.46)
+          ..arcToPoint(
+            const Offset(10.53, 20.53),
+            radius: radius,
+            clockwise: false,
+          )
+          ..lineTo(12.24, 18.82);
+      }),
+    );
+  }
+}
+
+/// A six-armed snowflake: a frozen block's badge.
+class SnowflakeGlyph extends StatelessWidget {
+  const SnowflakeGlyph({
+    super.key,
+    required this.size,
+    this.color = Palette.white,
+  });
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: Size.square(size),
+      painter: _IconPainter(color, (path) {
+        path
+          ..moveTo(2, 12)
+          ..lineTo(22, 12)
+          ..moveTo(12, 2)
+          ..lineTo(12, 22)
+          ..moveTo(20, 16)
+          ..lineTo(16, 12)
+          ..lineTo(20, 8)
+          ..moveTo(4, 8)
+          ..lineTo(8, 12)
+          ..lineTo(4, 16)
+          ..moveTo(16, 4)
+          ..lineTo(12, 8)
+          ..lineTo(8, 4)
+          ..moveTo(8, 20)
+          ..lineTo(12, 16)
+          ..lineTo(16, 20);
+      }, strokeWidth: 2.4),
+    );
+  }
+}
+
 class _IconPainter extends CustomPainter {
-  _IconPainter(this.color, this.trace);
+  _IconPainter(this.color, this.trace, {this.strokeWidth = 2.8});
 
   final Color color;
   final void Function(Path path) trace;
+  final double strokeWidth;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -254,12 +338,13 @@ class _IconPainter extends CustomPainter {
       Paint()
         ..color = color
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.8
+        ..strokeWidth = strokeWidth
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round,
     );
   }
 
   @override
-  bool shouldRepaint(_IconPainter oldDelegate) => oldDelegate.color != color;
+  bool shouldRepaint(_IconPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.strokeWidth != strokeWidth;
 }

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:material_ui/material_ui.dart';
 
 import '../../domain/block.dart';
@@ -11,6 +13,7 @@ import '../widgets/block_face.dart';
 import '../widgets/looping.dart';
 import 'block_marks.dart';
 import 'countdown_face.dart';
+import 'ice_face.dart';
 import 'turn_face.dart';
 
 final Curve _fade = Interval(
@@ -46,6 +49,10 @@ class _BoardViewState extends State<BoardView>
   final Map<int, int> _hits = {};
   final Map<int, int> _shakes = {};
   final Map<int, int> _runOuts = {};
+  final Map<int, int> _thaws = {};
+
+  /// For each twin pair, how often its tether has flashed.
+  final Map<int, int> _tethers = {};
   final Map<int, (Object, Widget)> _slots = {};
   late final AnimationController _arrival = AnimationController(
     vsync: this,
@@ -79,26 +86,58 @@ class _BoardViewState extends State<BoardView>
     if (!_arrival.isCompleted) {
       return;
     }
-    final mark = BlockMarks.of(widget.session.board)[block.id];
+    final marks = BlockMarks.of(widget.session.board);
     final outcome = widget.session.tap(block.id);
     if (outcome == null) {
       return;
     }
+    void count(Map<int, int> counts, int id) =>
+        counts[id] = (counts[id] ?? 0) + 1;
     setState(() {
       switch (outcome) {
-        case BlockLeaves(:final travel, :final runOuts):
-          _leaving.add(_Leaving(block, travel, mark));
+        case BlockLeaves(
+          :final travel,
+          :final runOuts,
+          :final twin,
+          :final twinTravel,
+          :final thawed,
+        ):
+          _leaving.add(_Leaving(block, travel, marks[block.id]));
           _slots.remove(block.id);
-          for (final ranOut in runOuts) {
-            _runOuts[ranOut.id] = (_runOuts[ranOut.id] ?? 0) + 1;
+          if (twin != null) {
+            _leaving.add(_Leaving(twin, twinTravel, marks[twin.id]));
+            _slots.remove(twin.id);
           }
-        case BlockBumps(:final blocker, :final restraint):
-          _bumps[block.id] = (_bumps[block.id] ?? 0) + 1;
+          for (final ranOut in runOuts) {
+            count(_runOuts, ranOut.id);
+          }
+          for (final thaw in thawed) {
+            count(_thaws, thaw.id);
+          }
+        case BlockBumps(
+          :final blocker,
+          :final restraint,
+          :final twin,
+          :final frozen,
+          :final stuck,
+        ):
+          count(_bumps, block.id);
+          if (twin != null) {
+            count(_bumps, twin.id);
+            count(_shakes, block.id);
+            count(_shakes, twin.id);
+            if (marks[block.id] case (role: MarkRole.twin, :final pair)) {
+              count(_tethers, pair);
+            }
+          }
+          if (frozen) {
+            count(_shakes, stuck.id);
+          }
           if (blocker != null) {
-            _hits[blocker.id] = (_hits[blocker.id] ?? 0) + 1;
+            count(_hits, blocker.id);
             if (restraint != null) {
-              _shakes[block.id] = (_shakes[block.id] ?? 0) + 1;
-              _shakes[blocker.id] = (_shakes[blocker.id] ?? 0) + 1;
+              count(_shakes, stuck.id);
+              count(_shakes, blocker.id);
             }
           }
       }
@@ -118,6 +157,24 @@ class _BoardViewState extends State<BoardView>
             final cell = constraints.maxWidth / board.size;
             final hinted = session.hintedBlockId;
             final marks = BlockMarks.of(board);
+            final hintedTwin = hinted != null && board.contains(hinted)
+                ? board.twinOf(board.blockById(hinted))?.id
+                : null;
+            // Badges stand out over the blocks next to them.
+            int layer(Block block) => marks[block.id] != null
+                ? 3
+                : block.turns
+                ? 1
+                : block.isFrozen ||
+                      _thaws.containsKey(block.id) ||
+                      _counted(block)
+                ? 2
+                : 0;
+            final order = board.blocks.toList()
+              ..sort(
+                (a, b) =>
+                    layer(a) != layer(b) ? layer(a) - layer(b) : a.id - b.id,
+              );
             return Stack(
               clipBehavior: Clip.none,
               children: [
@@ -132,36 +189,47 @@ class _BoardViewState extends State<BoardView>
                     ),
                   ),
                 ),
-                if (hinted != null && board.contains(hinted))
-                  _HintDots(
-                    key: ValueKey('hint-$hinted'),
-                    path: board.blockById(hinted).pathWithin(board.size),
-                    cell: cell,
-                  ),
-                // Badges stand out over the blocks next to them.
-                for (final block in [
-                  ...board.blocks.where(
-                    (block) =>
-                        marks[block.id] == null &&
-                        !block.turns &&
-                        !_counted(block),
-                  ),
-                  ...board.blocks.where((block) => block.turns),
-                  ...board.blocks.where(
-                    (block) =>
-                        marks[block.id] == null &&
-                        !block.turns &&
-                        _counted(block),
-                  ),
-                  ...board.blocks.where((block) => marks[block.id] != null),
-                ])
+                for (final id in [?hinted, ?hintedTwin])
+                  if (board.contains(id))
+                    _HintDots(
+                      key: ValueKey('hint-$id'),
+                      path: board.blockById(id).pathWithin(board.size),
+                      cell: cell,
+                    ),
+                for (final block in order)
                   _slot(
                     block,
                     cell,
-                    hinted: block.id == hinted,
+                    hinted: block.id == hinted || block.id == hintedTwin,
                     mark: marks[block.id],
                     locked: board.holdOn(block) != null,
                   ),
+                for (var pair = 0; pair < board.twins.length; pair++)
+                  if (board.contains(board.twins[pair].first) &&
+                      board.contains(board.twins[pair].second) &&
+                      (_tethers.containsKey(pair) ||
+                          board.twins[pair].first == hinted ||
+                          board.twins[pair].second == hinted))
+                    _Tether(
+                      key: ValueKey('tether-$pair'),
+                      from: _badgeCenter(
+                        board.blockById(board.twins[pair].first),
+                        cell,
+                      ),
+                      to: _badgeCenter(
+                        board.blockById(board.twins[pair].second),
+                        cell,
+                      ),
+                      color:
+                          BlockMarks.pairColors[min(
+                            pair,
+                            BlockMarks.pairColors.length - 1,
+                          )],
+                      flashes: _tethers[pair] ?? 0,
+                      steady:
+                          board.twins[pair].first == hinted ||
+                          board.twins[pair].second == hinted,
+                    ),
                 for (final leaving in _leaving)
                   _place(
                     ObjectKey(leaving),
@@ -187,6 +255,17 @@ class _BoardViewState extends State<BoardView>
   bool _counted(Block block) =>
       block.hasCountdown || _runOuts.containsKey(block.id);
 
+  /// Where the badge on the top-right corner of [block] sits.
+  Offset _badgeCenter(Block block, double cell) {
+    final width = (block.isVertical ? 1 : block.length) * cell - _gap * 2;
+    final height = (block.isVertical ? block.length : 1) * cell - _gap * 2;
+    final badge = (min(width, height) * 0.62).clamp(18.0, 26.0);
+    return Offset(
+      block.column * cell + _gap + width + badge * 8 / 26 - badge / 2,
+      block.row * cell + _gap - badge * 8 / 26 + badge / 2,
+    );
+  }
+
   Widget _slot(
     Block block,
     double cell, {
@@ -198,6 +277,7 @@ class _BoardViewState extends State<BoardView>
     final hits = _hits[block.id] ?? 0;
     final shakes = _shakes[block.id] ?? 0;
     final runOuts = _runOuts[block.id] ?? 0;
+    final thaws = _thaws[block.id] ?? 0;
     final inputs = (
       cell,
       hinted,
@@ -209,6 +289,8 @@ class _BoardViewState extends State<BoardView>
       block.direction,
       block.count,
       runOuts,
+      block.ice,
+      thaws,
     );
     final cached = _slots[block.id];
     if (cached != null && cached.$1 == inputs) {
@@ -227,6 +309,7 @@ class _BoardViewState extends State<BoardView>
         locked: locked,
         shakes: shakes,
         runOuts: runOuts,
+        thaws: thaws,
         arrival: _flight,
         flyIn:
             cell *
@@ -308,6 +391,7 @@ class _PlayableBlock extends StatefulWidget {
     required this.locked,
     required this.shakes,
     required this.runOuts,
+    required this.thaws,
     required this.arrival,
     required this.flyIn,
     required this.onTap,
@@ -323,6 +407,9 @@ class _PlayableBlock extends StatefulWidget {
 
   /// How often its countdown has run out: each change plays the run-out.
   final int runOuts;
+
+  /// How often its ice has broken: each change plays the shatter.
+  final int thaws;
   final Animation<double> arrival;
   final double flyIn;
   final VoidCallback onTap;
@@ -364,11 +451,16 @@ class _PlayableBlockState extends State<_PlayableBlock>
     vsync: this,
     duration: Motion.runOut,
   );
+  late final AnimationController _shatter = AnimationController(
+    vsync: this,
+    duration: Motion.iceShatter,
+  );
   late final Listenable _motion = Listenable.merge([
     _bump,
     _hit,
     _pulse,
     _runOut,
+    _shatter,
     widget.arrival,
   ]);
   late Widget _restingFace = _resting();
@@ -387,11 +479,15 @@ class _PlayableBlockState extends State<_PlayableBlock>
         widget.locked != oldWidget.locked ||
         widget.shakes != oldWidget.shakes ||
         widget.block.direction != oldWidget.block.direction ||
-        widget.block.count != oldWidget.block.count) {
+        widget.block.count != oldWidget.block.count ||
+        widget.block.ice != oldWidget.block.ice) {
       _restingFace = _resting();
     }
     if (widget.runOuts != oldWidget.runOuts) {
       _runOut.forward(from: 0);
+    }
+    if (widget.thaws != oldWidget.thaws) {
+      _shatter.forward(from: 0);
     }
     if (widget.bumpCount != oldWidget.bumpCount) {
       _bump.forward(from: 0);
@@ -418,6 +514,7 @@ class _PlayableBlockState extends State<_PlayableBlock>
     _hit.dispose();
     _pulse.dispose();
     _runOut.dispose();
+    _shatter.dispose();
     super.dispose();
   }
 
@@ -437,6 +534,13 @@ class _PlayableBlockState extends State<_PlayableBlock>
           direction: block.direction,
           mark: mark,
           locked: widget.locked,
+          shakes: widget.shakes,
+          ringColor: ringColor,
+          ringWidth: ringWidth,
+        ),
+        null when block.isFrozen => IceFace(
+          direction: block.direction,
+          ice: block.ice,
           shakes: widget.shakes,
           ringColor: ringColor,
           ringWidth: ringWidth,
@@ -481,11 +585,21 @@ class _PlayableBlockState extends State<_PlayableBlock>
       1 => ', countdown 1: take it out now',
       final count => ', countdown $count: must leave within $count moves',
     };
+    final frozen = switch (widget.block.ice) {
+      0 => '',
+      1 => ', frozen: a block next to it has to leave first',
+      final ice => ', frozen: $ice blocks next to it have to leave first',
+    };
+    final twin = switch (widget.mark) {
+      (role: MarkRole.twin, :final pair) =>
+        ', twin: leaves with the other ${BlockMarks.nameOf(pair)} twin',
+      _ => '',
+    };
     return Semantics(
       button: true,
       label:
           '${direction.name} ${widget.block.turns ? 'turning ' : ''}block'
-          '$countdown'
+          '$countdown$frozen$twin'
           '${widget.locked ? ', locked: clear the block with the key first' : ''}'
           '${widget.mark?.role == MarkRole.key ? ', carries a key' : ''}'
           '${widget.hinted ? ', hint: this one can go' : ''}',
@@ -523,6 +637,15 @@ class _PlayableBlockState extends State<_PlayableBlock>
                         )
                       : _runOut.isAnimating
                       ? _ranOut()
+                      : _shatter.isAnimating
+                      ? Stack(
+                          clipBehavior: Clip.none,
+                          fit: StackFit.expand,
+                          children: [
+                            restingFace!,
+                            IceShatter(progress: _shatter.value),
+                          ],
+                        )
                       : restingFace,
                 ),
               ),
@@ -675,4 +798,119 @@ class _HintDotsState extends State<_HintDots>
       ],
     );
   }
+}
+
+/// A dotted chain between the badges of two twins: steady while the pair
+/// is hinted, a short flash each time it bumps.
+class _Tether extends StatefulWidget {
+  const _Tether({
+    super.key,
+    required this.from,
+    required this.to,
+    required this.color,
+    required this.flashes,
+    required this.steady,
+  });
+
+  final Offset from;
+  final Offset to;
+  final Color color;
+  final int flashes;
+  final bool steady;
+
+  @override
+  State<_Tether> createState() => _TetherState();
+}
+
+class _TetherState extends State<_Tether> with SingleTickerProviderStateMixin {
+  late final AnimationController _flash = AnimationController(
+    vsync: this,
+    duration: Motion.tether,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.flashes > 0) {
+      _flash.forward();
+    }
+  }
+
+  @override
+  void didUpdateWidget(_Tether oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.flashes != oldWidget.flashes) {
+      _flash.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _flash.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: AnimatedBuilder(
+          animation: _flash,
+          builder: (context, _) {
+            final flash = _flash.isAnimating ? 1 - _flash.value : 0.0;
+            final strength = max(widget.steady ? 0.85 : 0.0, flash);
+            return strength <= 0
+                ? const SizedBox.shrink()
+                : CustomPaint(
+                    painter: _TetherPainter(
+                      widget.from,
+                      widget.to,
+                      widget.color,
+                      strength,
+                    ),
+                  );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _TetherPainter extends CustomPainter {
+  const _TetherPainter(this.from, this.to, this.color, this.strength);
+
+  final Offset from;
+  final Offset to;
+  final Color color;
+  final double strength;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final span = to - from;
+    final length = span.distance;
+    if (length < 30) {
+      return;
+    }
+    final along = span / length;
+    final halo = Paint()..color = Palette.white.withValues(alpha: strength);
+    final dot = Paint()..color = color.withValues(alpha: strength);
+    final edge = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..color = Palette.ink.withValues(alpha: 0.35 * strength);
+    for (var at = 16.0; at <= length - 16; at += 11) {
+      final center = from + along * at;
+      canvas
+        ..drawCircle(center, 4.2, halo)
+        ..drawCircle(center, 3, dot)
+        ..drawCircle(center, 3, edge);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_TetherPainter oldDelegate) =>
+      oldDelegate.from != from ||
+      oldDelegate.to != to ||
+      oldDelegate.color != color ||
+      oldDelegate.strength != strength;
 }

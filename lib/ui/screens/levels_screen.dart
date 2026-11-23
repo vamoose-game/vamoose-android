@@ -8,6 +8,7 @@ import '../../domain/star_rating.dart';
 import '../../state/progress_controller.dart';
 import '../game/block_marks.dart';
 import '../game/countdown_face.dart';
+import '../game/ice_face.dart';
 import '../game/game_mode.dart';
 import '../game/turn_face.dart';
 import '../navigation.dart';
@@ -185,17 +186,16 @@ class _ChapterSummary extends StatelessWidget {
                   children: [
                     Text(chapter.name, style: AppText.heading),
                     const SizedBox(height: 4),
-                    Row(
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Text(
                           '${chapter.firstLevel}–${chapter.lastLevel} · ${chapter.boardSize}×${chapter.boardSize}',
                           style: AppText.body.copyWith(fontSize: 15),
                         ),
-                        for (final mechanic in _mechanicsIn(context))
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8),
-                            child: mechanic,
-                          ),
+                        ..._mechanicsIn(context),
                       ],
                     ),
                   ],
@@ -256,6 +256,20 @@ extension on _ChapterSummary {
         Semantics(
           label: 'turning blocks',
           child: const TurnBadge(size: 22, framed: false),
+        ),
+      if (boards.any((board) => board.hasIce))
+        Semantics(
+          label: 'frozen blocks',
+          child: const IceBadge(size: 22, framed: false),
+        ),
+      if (boards.any((board) => board.hasTwins))
+        Semantics(
+          label: 'twin blocks',
+          child: const BlockBadge(
+            icon: BadgeIcon.link,
+            size: 22,
+            framed: false,
+          ),
         ),
       if (boards.any((board) => board.hasCountdowns))
         Semantics(

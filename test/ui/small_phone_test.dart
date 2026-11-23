@@ -105,23 +105,35 @@ void main() {
         }
       });
 
-      testWidgets('countdown intro and a countdown board', (tester) async {
-        await services.settings.markIntroSeen(Intros.locks.id);
-        await open(tester, const GameScreen(mode: CampaignMode(26)));
-        expect(find.text('Countdown blocks'), findsOneWidget);
-        expect(tester.takeException(), isNull);
+      for (final (level, intro) in [
+        (91, Intros.ice),
+        (131, Intros.twins),
+        (171, Intros.countdowns),
+      ]) {
+        testWidgets('${intro.title.toLowerCase()} intro and its board', (
+          tester,
+        ) async {
+          for (final seen in Intros.all) {
+            if (seen != intro) {
+              await services.settings.markIntroSeen(seen.id);
+            }
+          }
+          await open(tester, GameScreen(mode: CampaignMode(level)));
+          expect(find.text(intro.title), findsOneWidget);
+          expect(tester.takeException(), isNull);
 
-        await tester.tapAndWait(
-          find.text('Got it'),
-          const Duration(seconds: 1),
-        );
-        expect(find.text('Countdown blocks'), findsNothing);
-        expect(tester.takeException(), isNull);
-        await tester.close();
-      });
+          await tester.tapAndWait(
+            find.text('Got it'),
+            const Duration(seconds: 1),
+          );
+          expect(find.text(intro.title), findsNothing);
+          expect(tester.takeException(), isNull);
+          await tester.close();
+        });
+      }
 
       testWidgets('turning intro and pause', (tester) async {
-        await open(tester, const GameScreen(mode: CampaignMode(21)));
+        await open(tester, const GameScreen(mode: CampaignMode(51)));
         expect(find.text('Turning blocks'), findsOneWidget);
         expect(tester.takeException(), isNull);
 

@@ -27,15 +27,18 @@ void main() {
   }
 
   Future<void> seeEarlierIntros() async {
-    await services.settings.markIntroSeen(Intros.locks.id);
-    await services.settings.markIntroSeen(Intros.turns.id);
+    for (final intro in Intros.all) {
+      if (intro != Intros.countdowns) {
+        await services.settings.markIntroSeen(intro.id);
+      }
+    }
   }
 
   testWidgets('the countdown intro shows once when countdown blocks appear', (
     tester,
   ) async {
     await seeEarlierIntros();
-    await play(tester, 26);
+    await play(tester, 171);
 
     expect(find.text('Countdown blocks'), findsOneWidget);
     expect(find.text('Moves left'), findsOneWidget);
@@ -46,19 +49,19 @@ void main() {
     expect(services.settings.hasSeenIntro(Intros.countdowns.id), isTrue);
     await tester.close();
 
-    await play(tester, 29);
+    await play(tester, 174);
     expect(find.text('Countdown blocks'), findsNothing);
     await tester.close();
   });
 
   testWidgets('the hint clears the way of the countdown block', (tester) async {
     final semantics = tester.ensureSemantics();
-    final board = services.levels.byNumber(26).board;
+    final board = services.levels.byNumber(171).board;
     final countdown = board.blocks.singleWhere((block) => block.hasCountdown);
     final hinted = Countdowns.nextMove(board)!;
     await seeEarlierIntros();
     await services.settings.markIntroSeen(Intros.countdowns.id);
-    await play(tester, 26);
+    await play(tester, 171);
 
     await tester.tapAndWait(find.text('Hint'));
 
@@ -80,12 +83,12 @@ void main() {
     final semantics = tester.ensureSemantics();
     final sounds = RecordingSounds();
     services = buildTestServices(sounds: sounds);
-    final board = services.levels.byNumber(26).board;
+    final board = services.levels.byNumber(171).board;
     final countdown = board.blocks.singleWhere((block) => block.hasCountdown);
     final count = countdown.count!;
     await seeEarlierIntros();
     await services.settings.markIntroSeen(Intros.countdowns.id);
-    await play(tester, 26);
+    await play(tester, 171);
 
     Finder badge(int number) => find.descendant(
       of: blockFinder(countdown.id),

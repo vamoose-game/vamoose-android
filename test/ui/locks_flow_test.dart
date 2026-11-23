@@ -94,14 +94,14 @@ void main() {
     tester,
   ) async {
     await services.settings.markIntroSeen(Intros.locks.id);
-    await play(tester, 21);
+    await play(tester, 51);
 
     expect(find.text('Turning blocks'), findsOneWidget);
     await tester.tapAndWait(find.text('Got it'), const Duration(seconds: 1));
     expect(services.settings.hasSeenIntro(Intros.turns.id), isTrue);
     await tester.close();
 
-    await play(tester, 22);
+    await play(tester, 52);
     expect(find.text('Turning blocks'), findsNothing);
     await tester.close();
   });
@@ -110,11 +110,11 @@ void main() {
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
-    final board = services.levels.byNumber(21).board;
+    final board = services.levels.byNumber(51).board;
     final turner = board.blocks.firstWhere((block) => block.turns);
     final other = board.movableBlocks.firstWhere((block) => !block.turns);
     await services.settings.markIntroSeen(Intros.turns.id);
-    await play(tester, 21);
+    await play(tester, 51);
 
     Finder facing(String direction) =>
         find.bySemanticsLabel(RegExp('^$direction turning block'));

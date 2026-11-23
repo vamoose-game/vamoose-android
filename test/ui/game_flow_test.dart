@@ -630,9 +630,14 @@ void main() {
   testWidgets('a sliding block does not repaint the other blocks', (
     tester,
   ) async {
+    // A big board with nothing that turns, thaws or counts down by itself.
     final number = [
-      for (var level = 300; level <= services.levels.count; level++)
-        if (!services.levels.byNumber(level).board.hasTurningBlocks) level,
+      for (var level = services.levels.count; level > 0; level--)
+        if (services.levels.byNumber(level).board case final board
+            when !board.hasTurningBlocks &&
+                !board.hasIce &&
+                !board.hasCountdowns)
+          level,
     ].first;
     final board = services.levels.byNumber(number).board;
     await seeAllIntros(services);

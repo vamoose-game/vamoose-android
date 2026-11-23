@@ -25,6 +25,8 @@ Every block has an arrow. Tap it and it slides that way. A clear path sends it o
 • Three stars per level: keep them by not bumping
 • Locked blocks: clear the block with the key to open the lock
 • Turning blocks: round blocks that turn every time another block leaves
+• Frozen blocks: ice holds them until a block next to them leaves
+• Twin blocks: chained pairs that leave together, so clear both ways first
 • Countdown blocks: every block that leaves counts them down, so get them out in time
 • Lives: a failed level costs one, and they come back over time
 • Lives for coins or a short video, extra time for coins, hints for either
@@ -57,3 +59,7 @@ Beat the clock: every level now has a timer and three stars to keep. New turning
 ## Release notes, 1.2.0 (11)
 
 New: countdown blocks from level 26. Every block that leaves counts them down; get them out before they reach 0, or lose a star. Up to three on a level, and the order matters. Levels with countdown blocks are a little harder; every one can be saved, and the hint shows the way.
+
+## Release notes, 1.3.0 (12)
+
+New: frozen blocks and twin blocks. Mechanics now arrive one at a time: locked blocks at level 11, turning blocks at 51, frozen blocks at 91, twin blocks at 131 and countdown blocks at 171, and later levels mix them all. Every level also has 2 more seconds on the clock.

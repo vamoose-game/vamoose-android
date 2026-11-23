@@ -11,9 +11,12 @@ Android · Flutter · no backend · version 1.2.0
 - A clock on every level: 12 s for levels 1–10, then a little more each tier of 10–20 levels, up to 40 s (see [Levels and timers](tool/levels_report.md))
 - A failed level costs a life: 5 lives, one back every 20 minutes, +1 with a video, or refill all for 120 coins
 - Extra time: a fifth of the level's clock (2–5 s) before the first move, one per try (start with 1, then 30 coins each)
-- Locked blocks from level 11: a block with a padlock moves only after the block with its key has left; up to three pairs (gold, silver, bronze)
-- Turning blocks from level 21 to the end: round 1×1 blocks that turn a quarter clockwise every time another block leaves; they share levels with locks
-- Countdown blocks from level 26 to the end, on two levels in five: a block with a number counts down every time another block leaves, and must leave before it reaches 0 or it costs a star. Up to three a level, and an order that saves them all always exists (most urgent first); with two or more, the order mostly matters. The hint clears the way of the most urgent one
+- A new mechanic every 40 levels, each with an intro the first time it shows up, then in the mix to the end; from level 171 some levels have all five at once:
+  - Locked blocks from level 11: a block with a padlock moves only after the block with its key has left; up to three pairs (gold, silver, bronze)
+  - Turning blocks from level 51: round 1×1 blocks that turn a quarter clockwise every time another block leaves
+  - Frozen blocks from level 91: ice holds a block in place, and tapping it is a bump; every block that leaves next to it cracks a layer, and when the last one breaks it plays like any block. Thick ice (two layers, a 2 on the snowflake) from level 201
+  - Twin blocks from level 131: two chained blocks with matching link badges leave together on one tap, so both ways must be clear, or it's a bump. Up to three pairs, each in its own color (gold, silver, bronze); the hint lights up both. Two blocks leave, so countdowns drop by 2 and turning blocks turn twice
+  - Countdown blocks from level 171: a block with a number counts down every time another block leaves, and must leave before it reaches 0 or it costs a star. Up to three a level, and an order that saves them all always exists (most urgent first); with two or more, the order mostly matters. The hint clears the way of the most urgent one
 - Every level can be cleared in any order: you can never get stuck
 - Coins: start with 100 and 3 hints; +10 for a first clear and +5 for each new star, ×2 with a video once per level
 - Hints: 50 coins or a short video
@@ -24,7 +27,7 @@ Android · Flutter · no backend · version 1.2.0
 
 ## Levels and timers
 
-`tool/generate_levels.dart` builds every level from a curriculum (`tool/curriculum.dart`) and times it with a player simulation (`lib/domain/pace`): 400 simulated players, with spread-out speed, accuracy and practice, look for free blocks, tap them with Fitts' law timing, misread now and then (a bump) and rush when the clock runs low. With countdown blocks on the board they mostly work on the most urgent one, take time to work out its way, and now and then waste a move and let one run out. Each tier of 10–20 levels gets the fewest seconds, more than the tier before, that still let
+`tool/generate_levels.dart` builds every level from a curriculum (`tool/curriculum.dart`) and times it with a player simulation (`lib/domain/pace`): 400 simulated players, with spread-out speed, accuracy and practice, look for free blocks, tap them with Fitts' law timing, misread now and then (a bump) and rush when the clock runs low. They see ice and padlocks at a glance, trace both ways of a twin, and with countdown blocks on the board they mostly work on the most urgent one, take time to work out its way, and now and then waste a move and let one run out. Each tier of 10–20 levels gets the fewest seconds, more than the tier before, that still let
 
 - 60–78 % of players clear each level on the first try (gentler early on),
 - 90 % clear each level within three tries, and
@@ -32,9 +35,9 @@ Android · Flutter · no backend · version 1.2.0
 
 So a tier ends tight and the next one breathes again. Then every clock gets 2 s more (`PaceModel.leeway`), so no level is a race to its last second: about 13 % of first tries fail overall. Levels 1–10 have 12 s; their boards are drawn until they are fair at 10 s.
 
-No level has fewer blocks than in build 9, or fewer locks and turning blocks together than build 9 had locks. Every level but 9 also takes the simulated players at least as long to clear with no clock as the level with its number in build 9 (`test/fixtures/levels_build9.json`). Level 9 takes 9.2 s against 9.7 s: build 9 had no clock, and its level 9 would not be fair at 10 s, so level 9 takes the hardest board that is. Turning blocks are placed only where no order of moves can lead to a dead end (`Board.isSolvable`).
+No level has fewer blocks than in build 9, or fewer mechanics (lock pairs, turning, frozen and countdown blocks, twin pairs) than build 9 had locks. Every level but 9 also takes the simulated players at least as long to clear with no clock as the level with its number in build 9 (`test/fixtures/levels_build9.json`). Level 9 takes 9.2 s against 9.7 s: build 9 had no clock, and its level 9 would not be fair at 10 s, so level 9 takes the hardest board that is. Turning, frozen and twin blocks are placed only where no order of moves can lead to a dead end (`Board.isSolvable`): ice only ever cracks and twins only ever free up as blocks leave, so they keep the proof that covers turning blocks, and a test checks it against trying every order on random boards. A frozen block always has as many neighbours as layers of ice, twins never wait on each other and their ways never cross, and every lock still holds its block back in real play.
 
-A countdown block is a plain block that waits on at least two others and on no turning block. Its number is the moves it truly needs, every block in its way and itself, when the most urgent one goes first, plus spare moves: two up to level 45, one up to 240, then none for the most urgent one on levels with locks (the others always keep one, so a wasted move never costs more than a star). An exact plan (`Countdowns`, Lawler's rule) proves an order that saves every countdown block exists, and the hint follows it. Working out a countdown block's way takes time, so a countdown level takes the first board drawn that is fair at the clock the rest of its tier needs: countdowns make their own levels harder (85 % clear them on the first try, against 89 % for the other levels) and leave every other clock as it was. The levels without countdown blocks are exactly as in build 10. The daily puzzle is timed for its own board and for a new player, so that 60 % clear it on the first try and 90 % within three tries, with a small margin, and gets the same 2 s more.
+A countdown block is a plain block that waits on at least two others and on no turning, frozen or twin block. Its number is the moves it truly needs, every block in its way and itself, when the most urgent one goes first, plus spare moves: two up to level 200, one up to 280, then none for the most urgent one (the others always keep one, so a wasted move never costs more than a star). An exact plan (`Countdowns`, Lawler's rule) proves an order that saves every countdown block exists, and the hint follows it. Working out a countdown block's way takes time, so a countdown level takes the first board drawn that is fair at the clock the rest of its tier needs: countdowns make their own levels harder and leave every other clock as it was. Levels with countdown, frozen or twin blocks are the hardest: about 84 % clear them on the first try, against 92 % for the other levels from 91 on. The daily puzzle is timed for its own board and for a new player, so that 60 % clear it on the first try and 90 % within three tries, with a small margin, and gets the same 2 s more.
 
 ## Run
 
@@ -54,7 +57,7 @@ flutter test
 
 | Path | What |
 | --- | --- |
-| `lib/domain` | Board, tap rules, restraints (locks), turning and countdown blocks, the countdown plan, stars, chapters, level generator and its features |
+| `lib/domain` | Board, tap rules, restraints (locks), turning, frozen, twin and countdown blocks, the countdown plan, stars, chapters, level generator and its features |
 | `lib/domain/pace` | Player simulation that times levels |
 | `lib/data` | Local storage and level catalog |
 | `lib/state` | Settings, progress, coins, hints, extra time, lives, daily streak, themes, game session and its clock |

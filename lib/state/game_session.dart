@@ -4,14 +4,16 @@ import 'package:flutter/foundation.dart';
 
 import '../domain/block.dart';
 import '../domain/board.dart';
+import '../domain/countdowns.dart';
 import '../domain/level.dart';
 import '../domain/star_rating.dart';
 import '../domain/tap_outcome.dart';
 
 enum Failure { outOfStars, outOfTime }
 
-/// One go at a puzzle: the board as it stands, bumps, stars and the clock.
+/// One go at a puzzle: the board as it stands, misses, stars and the clock.
 ///
+/// A miss is a bump or a countdown block that runs out; each costs a star.
 /// The clock counts down from the puzzle's time limit once [start] is
 /// called, and only while nothing [hold]s it (a dialog, the app in the
 /// background). Losing the last star or running out of time ends the go.
@@ -32,6 +34,7 @@ class GameSession extends ChangeNotifier {
   final ValueNotifier<int> _secondsLeft;
   Board _board;
   int _bumps = 0;
+  int _runOuts = 0;
   int _streak = 0;
   int? _hintedBlockId;
   Duration _bonus = Duration.zero;
@@ -45,9 +48,12 @@ class GameSession extends ChangeNotifier {
 
   int get bumps => _bumps;
 
+  /// Countdown blocks that ran out on the board.
+  int get runOuts => _runOuts;
+
   int get streak => _streak;
 
-  int get stars => StarRating.forBumps(_bumps);
+  int get stars => StarRating.forMisses(_bumps + _runOuts);
 
   int get totalBlocks => _initial.blockCount;
 
@@ -107,16 +113,17 @@ class GameSession extends ChangeNotifier {
     _moved = true;
     final outcome = _board.tap(blockId);
     switch (outcome) {
-      case BlockLeaves():
+      case BlockLeaves(:final runOuts):
         _board = _board.without(blockId);
-        _streak++;
+        _runOuts += runOuts.length;
+        _streak = runOuts.isEmpty ? _streak + 1 : 0;
         _dropStaleHint();
       case BlockBumps():
         _bumps++;
         _streak = 0;
-        if (stars == 0) {
-          _failure = Failure.outOfStars;
-        }
+    }
+    if (stars == 0) {
+      _failure = Failure.outOfStars;
     }
     _sync();
     notifyListeners();
@@ -134,12 +141,15 @@ class GameSession extends ChangeNotifier {
     return true;
   }
 
-  /// Lights up a block that can go now, a plain one if there is one: a
+  /// Lights up a block that can go now: the first in the way of the most
+  /// urgent countdown block, or else a plain one if there is one, since a
   /// turning block may face away again after the next move.
   Block? revealHint() {
     final free = _board.movableBlocks.toList();
     final block =
-        free.where((block) => !block.turns).firstOrNull ?? free.firstOrNull;
+        Countdowns.nextMove(_board) ??
+        free.where((block) => !block.turns).firstOrNull ??
+        free.firstOrNull;
     _hintedBlockId = block?.id;
     notifyListeners();
     return block;
@@ -148,6 +158,7 @@ class GameSession extends ChangeNotifier {
   void restart() {
     _board = _initial;
     _bumps = 0;
+    _runOuts = 0;
     _streak = 0;
     _hintedBlockId = null;
     _bonus = Duration.zero;

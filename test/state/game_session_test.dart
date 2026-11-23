@@ -295,4 +295,115 @@ void main() {
     session.restart();
     expect(session.streak, 0);
   });
+
+  group('countdown blocks', () {
+    // Block 0 has to leave within [count] moves, and block 1 is in its way.
+    Puzzle counting({int count = 2}) => (
+      board: Board(
+        size: 3,
+        blocks: [
+          Block(
+            id: 0,
+            row: 1,
+            column: 0,
+            length: 1,
+            direction: Direction.right,
+            count: count,
+          ),
+          block(1, 1, 2, 1, Direction.up),
+          block(2, 2, 0, 1, Direction.down),
+          block(3, 0, 0, 1, Direction.up),
+        ],
+      ),
+      timeLimit: tenSeconds,
+    );
+
+    test('one saved in time keeps every star', () {
+      final session = sessionFor(counting());
+
+      session.tap(1);
+      expect(session.board.blockById(0).count, 1);
+      final outcome = session.tap(0);
+
+      expect((outcome! as BlockLeaves).runOuts, isEmpty);
+      expect(session.stars, 3);
+      expect(session.runOuts, 0);
+    });
+
+    test('one that runs out costs a star and counts no more', () {
+      final session = sessionFor(counting());
+
+      session
+        ..tap(2)
+        ..tap(3);
+
+      expect(session.runOuts, 1);
+      expect(session.bumps, 0);
+      expect(session.stars, 2);
+      expect(session.streak, 0);
+      expect(session.board.blockById(0).count, isNull);
+      expect(session.failure, isNull);
+
+      session
+        ..tap(1)
+        ..tap(0);
+      expect(session.isCleared, isTrue);
+      expect(session.stars, 2);
+    });
+
+    test('the third miss ends the go, bumps and run-outs alike', () {
+      final session = sessionFor(counting(count: 1));
+
+      session
+        ..tap(0)
+        ..tap(0);
+      expect(session.stars, 1);
+      final outcome = session.tap(2);
+
+      expect((outcome! as BlockLeaves).runOuts.single.id, 0);
+      expect(session.stars, 0);
+      expect(session.failure, Failure.outOfStars);
+      expect(session.tap(1), isNull);
+    });
+
+    test('restart puts every countdown back', () {
+      final session = sessionFor(counting());
+      session
+        ..tap(2)
+        ..tap(3);
+
+      session.restart();
+
+      expect(session.board.blockById(0).count, 2);
+      expect(session.runOuts, 0);
+      expect(session.stars, 3);
+    });
+
+    test('the hint clears the way of the most urgent one first', () {
+      final session = sessionFor((
+        board: Board(
+          size: 3,
+          blocks: [
+            Block(
+              id: 0,
+              row: 1,
+              column: 0,
+              length: 1,
+              direction: Direction.right,
+              count: 3,
+            ),
+            block(1, 2, 0, 1, Direction.down),
+            block(2, 0, 0, 1, Direction.up),
+            block(3, 1, 2, 1, Direction.up),
+          ],
+        ),
+        timeLimit: tenSeconds,
+      ));
+
+      expect(session.revealHint()?.id, 3);
+      session.tap(3);
+      expect(session.hasActiveHint, isFalse);
+      expect(session.revealHint()?.id, 0);
+    });
+  });
 }

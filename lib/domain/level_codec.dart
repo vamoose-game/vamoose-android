@@ -7,9 +7,9 @@ import 'level.dart';
 import 'restraint.dart';
 
 /// Reads and writes `assets/levels/levels.json`: one entry per level, as
-/// `{"size":6,"time":12,"blocks":[[row,column,length,"u"]],"locks":[[lockedId,keyId]],"turns":[id]}`.
-/// Block ids are their positions in `blocks`; `locks` and `turns` are left
-/// out when empty.
+/// `{"size":6,"time":12,"blocks":[[row,column,length,"u"]],"locks":[[lockedId,keyId]],"turns":[id],"counts":[[id,count]]}`.
+/// Block ids are their positions in `blocks`; `locks`, `turns` and `counts`
+/// are left out when empty.
 abstract final class LevelCodec {
   static const Duration defaultTimeLimit = Duration(seconds: 60);
 
@@ -60,6 +60,11 @@ abstract final class LevelCodec {
           for (final block in blocks)
             if (block.turns) index[block.id]!,
         ],
+      if (blocks.any((block) => block.hasCountdown))
+        'counts': [
+          for (final block in blocks)
+            if (block.count case final count?) [index[block.id]!, count],
+        ],
     };
   }
 
@@ -67,6 +72,12 @@ abstract final class LevelCodec {
     final rows = json['blocks'] as List<dynamic>;
     final locks = json['locks'] as List<dynamic>? ?? const [];
     final turns = {...?(json['turns'] as List<dynamic>?)?.cast<int>()};
+    final counts = {
+      for (final pair
+          in (json['counts'] as List<dynamic>? ?? const [])
+              .cast<List<dynamic>>())
+        pair[0] as int: pair[1] as int,
+    };
     return Board(
       size: json['size'] as int,
       blocks: [
@@ -75,6 +86,7 @@ abstract final class LevelCodec {
             id,
             rows[id] as List<dynamic>,
             turns: turns.contains(id),
+            count: counts[id],
           ),
       ],
       restraints: [
@@ -101,13 +113,18 @@ abstract final class LevelCodec {
     return {if (locks.isNotEmpty) 'locks': locks};
   }
 
-  static Block _decodeBlock(int id, List<dynamic> row, {required bool turns}) =>
-      Block(
-        id: id,
-        row: row[0] as int,
-        column: row[1] as int,
-        length: row[2] as int,
-        direction: Direction.fromCode(row[3] as String),
-        turns: turns,
-      );
+  static Block _decodeBlock(
+    int id,
+    List<dynamic> row, {
+    required bool turns,
+    int? count,
+  }) => Block(
+    id: id,
+    row: row[0] as int,
+    column: row[1] as int,
+    length: row[2] as int,
+    direction: Direction.fromCode(row[3] as String),
+    turns: turns,
+    count: count,
+  );
 }

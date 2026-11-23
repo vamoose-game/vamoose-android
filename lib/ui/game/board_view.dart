@@ -8,7 +8,9 @@ import '../theme/board_colors.dart';
 import '../theme/motion.dart';
 import '../theme/palette.dart';
 import '../widgets/block_face.dart';
+import '../widgets/looping.dart';
 import 'block_marks.dart';
+import 'countdown_face.dart';
 import 'turn_face.dart';
 
 final Curve _fade = Interval(
@@ -43,6 +45,7 @@ class _BoardViewState extends State<BoardView>
   final Map<int, int> _bumps = {};
   final Map<int, int> _hits = {};
   final Map<int, int> _shakes = {};
+  final Map<int, int> _runOuts = {};
   final Map<int, (Object, Widget)> _slots = {};
   late final AnimationController _arrival = AnimationController(
     vsync: this,
@@ -83,9 +86,12 @@ class _BoardViewState extends State<BoardView>
     }
     setState(() {
       switch (outcome) {
-        case BlockLeaves(:final travel):
+        case BlockLeaves(:final travel, :final runOuts):
           _leaving.add(_Leaving(block, travel, mark));
           _slots.remove(block.id);
+          for (final ranOut in runOuts) {
+            _runOuts[ranOut.id] = (_runOuts[ranOut.id] ?? 0) + 1;
+          }
         case BlockBumps(:final blocker, :final restraint):
           _bumps[block.id] = (_bumps[block.id] ?? 0) + 1;
           _hits[blocker.id] = (_hits[blocker.id] ?? 0) + 1;
@@ -130,11 +136,21 @@ class _BoardViewState extends State<BoardView>
                     path: board.blockById(hinted).pathWithin(board.size),
                     cell: cell,
                   ),
+                // Badges stand out over the blocks next to them.
                 for (final block in [
                   ...board.blocks.where(
-                    (block) => marks[block.id] == null && !block.turns,
+                    (block) =>
+                        marks[block.id] == null &&
+                        !block.turns &&
+                        !_counted(block),
                   ),
                   ...board.blocks.where((block) => block.turns),
+                  ...board.blocks.where(
+                    (block) =>
+                        marks[block.id] == null &&
+                        !block.turns &&
+                        _counted(block),
+                  ),
                   ...board.blocks.where((block) => marks[block.id] != null),
                 ])
                   _slot(
@@ -165,6 +181,10 @@ class _BoardViewState extends State<BoardView>
     );
   }
 
+  /// Whether [block] shows a countdown, or has run out of one.
+  bool _counted(Block block) =>
+      block.hasCountdown || _runOuts.containsKey(block.id);
+
   Widget _slot(
     Block block,
     double cell, {
@@ -175,6 +195,7 @@ class _BoardViewState extends State<BoardView>
     final bumps = _bumps[block.id] ?? 0;
     final hits = _hits[block.id] ?? 0;
     final shakes = _shakes[block.id] ?? 0;
+    final runOuts = _runOuts[block.id] ?? 0;
     final inputs = (
       cell,
       hinted,
@@ -184,6 +205,8 @@ class _BoardViewState extends State<BoardView>
       mark,
       locked,
       block.direction,
+      block.count,
+      runOuts,
     );
     final cached = _slots[block.id];
     if (cached != null && cached.$1 == inputs) {
@@ -201,6 +224,7 @@ class _BoardViewState extends State<BoardView>
         mark: mark,
         locked: locked,
         shakes: shakes,
+        runOuts: runOuts,
         arrival: _flight,
         flyIn:
             cell *
@@ -281,6 +305,7 @@ class _PlayableBlock extends StatefulWidget {
     required this.mark,
     required this.locked,
     required this.shakes,
+    required this.runOuts,
     required this.arrival,
     required this.flyIn,
     required this.onTap,
@@ -293,6 +318,9 @@ class _PlayableBlock extends StatefulWidget {
   final BlockMark? mark;
   final bool locked;
   final int shakes;
+
+  /// How often its countdown has run out: each change plays the run-out.
+  final int runOuts;
   final Animation<double> arrival;
   final double flyIn;
   final VoidCallback onTap;
@@ -316,6 +344,8 @@ class _PlayableBlockState extends State<_PlayableBlock>
     TweenSequenceItem(tween: Tween(begin: 5.0, end: 0.0), weight: 30),
   ]);
 
+  static const List<Keyframe> _haloPath = [(0, 0), (0.3, 6), (0.55, 6), (1, 0)];
+
   late final AnimationController _bump = AnimationController(
     vsync: this,
     duration: Motion.bump,
@@ -328,10 +358,15 @@ class _PlayableBlockState extends State<_PlayableBlock>
     vsync: this,
     duration: Motion.hintPulse,
   );
+  late final AnimationController _runOut = AnimationController(
+    vsync: this,
+    duration: Motion.runOut,
+  );
   late final Listenable _motion = Listenable.merge([
     _bump,
     _hit,
     _pulse,
+    _runOut,
     widget.arrival,
   ]);
   late Widget _restingFace = _resting();
@@ -349,8 +384,12 @@ class _PlayableBlockState extends State<_PlayableBlock>
         widget.mark != oldWidget.mark ||
         widget.locked != oldWidget.locked ||
         widget.shakes != oldWidget.shakes ||
-        widget.block.direction != oldWidget.block.direction) {
+        widget.block.direction != oldWidget.block.direction ||
+        widget.block.count != oldWidget.block.count) {
       _restingFace = _resting();
+    }
+    if (widget.runOuts != oldWidget.runOuts) {
+      _runOut.forward(from: 0);
     }
     if (widget.bumpCount != oldWidget.bumpCount) {
       _bump.forward(from: 0);
@@ -376,6 +415,7 @@ class _PlayableBlockState extends State<_PlayableBlock>
     _bump.dispose();
     _hit.dispose();
     _pulse.dispose();
+    _runOut.dispose();
     super.dispose();
   }
 
@@ -399,6 +439,12 @@ class _PlayableBlockState extends State<_PlayableBlock>
           ringColor: ringColor,
           ringWidth: ringWidth,
         ),
+        null when block.count != null => CountdownFace(
+          direction: block.direction,
+          count: block.count!,
+          ringColor: ringColor,
+          ringWidth: ringWidth,
+        ),
         null => BlockFace(
           direction: block.direction,
           ringColor: ringColor,
@@ -408,13 +454,36 @@ class _PlayableBlockState extends State<_PlayableBlock>
     );
   }
 
+  /// The block just after its countdown ran out: a red halo flashes round
+  /// it as the "0" pops off its corner.
+  Widget _ranOut() {
+    final t = _runOut.value;
+    final badge =
+        t * Motion.runOut.inMilliseconds / Motion.runOutBadge.inMilliseconds;
+    return CornerBadge(
+      face: _face(
+        ringColor: Palette.alert.withValues(alpha: 0.4),
+        ringWidth: keyframes(t, _haloPath, curve: Curves.easeOut),
+      ),
+      badge: (size) => badge < 1
+          ? RunOutBadge(progress: badge, size: size)
+          : const SizedBox.shrink(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final direction = widget.block.direction;
+    final countdown = switch (widget.block.count) {
+      null => '',
+      1 => ', countdown 1: take it out now',
+      final count => ', countdown $count: must leave within $count moves',
+    };
     return Semantics(
       button: true,
       label:
           '${direction.name} ${widget.block.turns ? 'turning ' : ''}block'
+          '$countdown'
           '${widget.locked ? ', locked: clear the block with the key first' : ''}'
           '${widget.mark?.role == MarkRole.key ? ', carries a key' : ''}'
           '${widget.hinted ? ', hint: this one can go' : ''}',
@@ -450,6 +519,8 @@ class _PlayableBlockState extends State<_PlayableBlock>
                             Curves.easeOut.transform(_hit.value),
                           ),
                         )
+                      : _runOut.isAnimating
+                      ? _ranOut()
                       : restingFace,
                 ),
               ),
@@ -529,6 +600,11 @@ class _LeavingBlockState extends State<_LeavingBlock>
               mark: mark,
               locked: false,
               shakes: 0,
+            ),
+            null when widget.block.count != null => CountdownFace(
+              direction: direction,
+              count: widget.block.count!,
+              lively: false,
             ),
             null => BlockFace(direction: direction),
           },

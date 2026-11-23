@@ -7,6 +7,7 @@ import '../../domain/chapters.dart';
 import '../../domain/star_rating.dart';
 import '../../state/progress_controller.dart';
 import '../game/block_marks.dart';
+import '../game/countdown_face.dart';
 import '../game/game_mode.dart';
 import '../game/turn_face.dart';
 import '../navigation.dart';
@@ -255,6 +256,11 @@ extension on _ChapterSummary {
         Semantics(
           label: 'turning blocks',
           child: const TurnBadge(size: 22, framed: false),
+        ),
+      if (boards.any((board) => board.hasCountdowns))
+        Semantics(
+          label: 'countdown blocks',
+          child: const CountdownBadge(count: 3, size: 22, framed: false),
         ),
     ];
   }

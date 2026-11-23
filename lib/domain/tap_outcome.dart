@@ -8,9 +8,16 @@ sealed class TapOutcome {
 }
 
 final class BlockLeaves extends TapOutcome {
-  const BlockLeaves(super.block, {required this.travel});
+  const BlockLeaves(
+    super.block, {
+    required this.travel,
+    this.runOuts = const [],
+  });
 
   final int travel;
+
+  /// Countdown blocks that ran out as this block left: each costs a star.
+  final List<Block> runOuts;
 }
 
 final class BlockBumps extends TapOutcome {

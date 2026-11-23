@@ -11,6 +11,7 @@ class Block {
     this.turns = false,
     this.count,
     this.ice = 0,
+    this.cracks = 0,
   }) : assert(!turns || length == 1, 'Only 1×1 blocks can turn'),
        assert(count == null || count > 0, 'A countdown shows 1 or more'),
        assert(ice >= 0, 'Ice has no fewer than 0 layers');
@@ -33,6 +34,9 @@ class Block {
   /// Layers of ice on a frozen block, 0 when it is not frozen. A frozen
   /// block can't move; every block that leaves next to it cracks a layer.
   final int ice;
+
+  /// Layers of ice that have cracked so far, while some are left.
+  final int cracks;
 
   bool get isVertical => direction.isVertical;
 
@@ -81,20 +85,18 @@ class Block {
     final count => withCount(count > 1 ? count - 1 : null),
   };
 
-  /// This block with [cracks] fewer layers of ice, down to none.
-  Block cracked(int cracks) =>
-      cracks <= 0 || ice == 0 ? this : withIce(ice > cracks ? ice - cracks : 0);
+  /// This block with [more] layers of ice cracked; with none left it is no
+  /// longer frozen.
+  Block cracked(int more) {
+    if (more <= 0 || ice == 0) {
+      return this;
+    }
+    final left = ice > more ? ice - more : 0;
+    return _with(ice: left, cracks: left == 0 ? 0 : cracks + ice - left);
+  }
 
-  Block copyWith({Direction? direction, bool? turns}) => Block(
-    id: id,
-    row: row,
-    column: column,
-    length: length,
-    direction: direction ?? this.direction,
-    turns: turns ?? this.turns,
-    count: count,
-    ice: ice,
-  );
+  Block copyWith({Direction? direction, bool? turns}) =>
+      _with(direction: direction, turns: turns);
 
   /// This block with [count] moves left, or no countdown when null.
   Block withCount(int? count) => Block(
@@ -106,17 +108,22 @@ class Block {
     turns: turns,
     count: count,
     ice: ice,
+    cracks: cracks,
   );
 
-  /// This block under [ice] layers of ice, or not frozen at 0.
-  Block withIce(int ice) => Block(
-    id: id,
-    row: row,
-    column: column,
-    length: length,
-    direction: direction,
-    turns: turns,
-    count: count,
-    ice: ice,
-  );
+  /// This block under [ice] fresh layers of ice, or not frozen at 0.
+  Block withIce(int ice) => _with(ice: ice, cracks: 0);
+
+  Block _with({Direction? direction, bool? turns, int? ice, int? cracks}) =>
+      Block(
+        id: id,
+        row: row,
+        column: column,
+        length: length,
+        direction: direction ?? this.direction,
+        turns: turns ?? this.turns,
+        count: count,
+        ice: ice ?? this.ice,
+        cracks: cracks ?? this.cracks,
+      );
 }

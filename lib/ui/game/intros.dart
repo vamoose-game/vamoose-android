@@ -78,6 +78,16 @@ abstract final class Intros {
     appliesTo: _hasIce,
   );
 
+  static const Intro thickIce = Intro(
+    id: 'thickIce',
+    title: 'Thick ice',
+    line:
+        'Each block that leaves next to it cracks the ice. The last one '
+        'breaks it.',
+    demo: ThickIceDemo(),
+    appliesTo: _hasThickIce,
+  );
+
   static const Intro twins = Intro(
     id: 'twins',
     title: 'Twin blocks',
@@ -87,7 +97,14 @@ abstract final class Intros {
     appliesTo: _hasTwins,
   );
 
-  static const List<Intro> all = [locks, turns, ice, twins, countdowns];
+  static const List<Intro> all = [
+    locks,
+    turns,
+    ice,
+    thickIce,
+    twins,
+    countdowns,
+  ];
 
   static bool _hasLocks(Board board) =>
       board.restraints.any((restraint) => restraint is Lock);
@@ -97,6 +114,8 @@ abstract final class Intros {
   static bool _hasCountdowns(Board board) => board.hasCountdowns;
 
   static bool _hasIce(Board board) => board.hasIce;
+
+  static bool _hasThickIce(Board board) => board.hasThickIce;
 
   static bool _hasTwins(Board board) => board.hasTwins;
 }

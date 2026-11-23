@@ -298,8 +298,7 @@ LevelSpec _withBlocks(LevelSpec spec, int blockCount) => LevelSpec(
   turners: spec.turners,
   countdowns: spec.countdowns,
   spare: spec.spare,
-  frozen: spec.frozen,
-  thickIce: spec.thickIce,
+  ice: spec.ice,
   twins: spec.twins,
 );
 
@@ -418,8 +417,8 @@ class _Report {
         trialAt(level.number, level.timeLimit.inSeconds).averageRunOuts,
     ];
     final saved = counting.every((level) => Countdowns.canSaveAll(level.board));
-    final thick = levels
-        .where((level) => level.board.blocks.any((block) => block.ice > 1))
+    int thickerThan(int layers) => levels
+        .where((level) => level.board.blocks.any((block) => block.ice > layers))
         .length;
     final all = levels.where((level) {
       final board = level.board;
@@ -432,7 +431,8 @@ class _Report {
     return 'Mechanics: ${from('locks', (board) => board.restraints.isNotEmpty)}, '
         '${from('turning blocks', (board) => board.hasTurningBlocks)}, '
         '${from('frozen blocks', (board) => board.hasIce)} '
-        '(thick ice on $thick), '
+        '(two layers of ice on ${thickerThan(1)}, three on '
+        '${thickerThan(2)}), '
         '${from('twin blocks', (board) => board.hasTwins)} and '
         '${from('countdown blocks', (board) => board.hasCountdowns)}; '
         '$all levels have all five. '
@@ -480,9 +480,10 @@ class _Report {
       ..writeln()
       ..writeln(
         'Untimed is the median clear with no clock, and build 9 the same '
-        'for the level with that number in build 9. Countdown lists the '
-        'numbers on the countdown blocks at the start, and run-outs the '
-        'countdown blocks a first try loses on average.',
+        'for the level with that number in build 9. Frozen lists the layers '
+        'of ice on each frozen block, Countdown the numbers on the countdown '
+        'blocks at the start, and run-outs the countdown blocks a first try '
+        'loses on average.',
       )
       ..writeln()
       ..writeln(
@@ -533,15 +534,13 @@ class _Report {
   int _turning(Board board) =>
       board.blocks.where((block) => block.turns).length;
 
-  /// The frozen blocks on [board], with thick ice marked ×2.
+  /// The layers of ice on each frozen block on [board], thickest first.
   String _frozen(Board board) {
     final ice = [
       for (final block in board.blocks)
         if (block.isFrozen) block.ice,
-    ]..sort();
-    return ice.isEmpty
-        ? '0'
-        : ice.map((layers) => layers > 1 ? '1×2' : '1').join(', ');
+    ]..sort((a, b) => b - a);
+    return ice.isEmpty ? '0' : ice.join(', ');
   }
 
   /// The countdown numbers on [board], smallest first, or 0.

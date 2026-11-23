@@ -66,8 +66,51 @@ void main() {
 
       final cracked = board.without(1);
       expect(cracked.blockById(0).ice, 1);
+      expect(cracked.blockById(0).cracks, 1);
       expect(cracked.canLeave(cracked.blockById(0)), isFalse);
-      expect(cracked.without(2).blockById(0).ice, 0);
+      final thawed = cracked.without(2).blockById(0);
+      expect(thawed.ice, 0);
+      expect(thawed.cracks, 0, reason: 'no ice left to show cracks in');
+    });
+
+    test('the thickest ice cracks twice before it shatters', () {
+      // Block 0 is frozen under three layers, with a block on three sides.
+      final board = Board(
+        size: 3,
+        blocks: [
+          frozen(0, 1, 0, Direction.left, ice: 3),
+          block(1, 1, 1, 1, Direction.up),
+          block(2, 2, 0, 1, Direction.down),
+          block(3, 0, 0, 1, Direction.up),
+        ],
+      );
+
+      final once = board.without(1);
+      expect(once.blockById(0).ice, 2);
+      expect(once.blockById(0).cracks, 1);
+      final twice = once.without(3);
+      expect(twice.blockById(0).ice, 1);
+      expect(twice.blockById(0).cracks, 2);
+      expect(twice.canLeave(twice.blockById(0)), isFalse);
+      final free = twice.without(2);
+      expect(free.blockById(0).isFrozen, isFalse);
+      expect(free.blockById(0).cracks, 0);
+      expect(free.tap(0), isA<BlockLeaves>());
+    });
+
+    test('cracks last through turns and countdowns, and reset with ice', () {
+      final thick = frozen(0, 0, 0, Direction.up, ice: 3);
+
+      expect(thick.cracked(0), same(thick));
+      expect(thick.cracked(2).ice, 1);
+      expect(thick.cracked(2).cracks, 2);
+      expect(thick.cracked(3).cracks, 0);
+      final cracked = thick.cracked(1);
+      expect(cracked.copyWith(direction: Direction.down).cracks, 1);
+      expect(cracked.withCount(4).cracks, 1);
+      expect(cracked.withCount(4).countedDown().cracks, 1);
+      expect(cracked.withIce(2).cracks, 0);
+      expect(thick.withIce(0).cracked(1).cracks, 0);
     });
   });
 
@@ -253,8 +296,10 @@ void main() {
           twist: 0.7,
           locks: seed % 3,
           turners: seed % 4,
-          frozen: 1 + seed % 3,
-          thickIce: seed % 2,
+          ice: [
+            for (var index = 0; index < 1 + seed % 3; index++)
+              index == 0 ? 1 + seed % 3 : 1,
+          ],
           twins: 1 + seed % 3,
           countdowns: seed % 3,
           spare: 1,
@@ -266,10 +311,9 @@ void main() {
             if (block.isFrozen) block,
         ];
 
-        expect(ice, hasLength(spec.frozen), reason: reason);
         expect(
-          ice.where((block) => block.ice == 2),
-          hasLength(spec.thickIce),
+          [for (final block in ice) block.ice]..sort(),
+          [...spec.ice]..sort(),
           reason: reason,
         );
         expect(board.twins, hasLength(spec.twins), reason: reason);

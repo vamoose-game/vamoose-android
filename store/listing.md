@@ -63,3 +63,7 @@ New: countdown blocks from level 26. Every block that leaves counts them down; g
 ## Release notes, 1.3.0 (12)
 
 New: frozen blocks and twin blocks. Mechanics now arrive one at a time: locked blocks at level 11, turning blocks at 51, frozen blocks at 91, twin blocks at 131 and countdown blocks at 171, and later levels mix them all. Every level also has 2 more seconds on the clock.
+
+## Release notes, 1.3.0 (13)
+
+Frozen blocks crack: no more numbers on the ice. Each block that leaves next to a frozen one cracks it further until it shatters, and thicker ice looks frostier. Thick ice comes in at level 201, with a new intro, and the thickest ice, three layers, at 281.

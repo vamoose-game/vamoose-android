@@ -541,6 +541,8 @@ class _PlayableBlockState extends State<_PlayableBlock>
         null when block.isFrozen => IceFace(
           direction: block.direction,
           ice: block.ice,
+          cracks: block.cracks,
+          variant: block.id,
           shakes: widget.shakes,
           ringColor: ringColor,
           ringWidth: ringWidth,

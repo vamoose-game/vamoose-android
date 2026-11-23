@@ -42,6 +42,7 @@ abstract final class Motion {
   static const Duration iceWobble = Duration(milliseconds: 450);
   static const Duration iceShatter = Duration(milliseconds: 650);
   static const Duration iceDemo = Duration(milliseconds: 5000);
+  static const Duration thickIceDemo = Duration(milliseconds: 6000);
   static const Duration twinsDemo = Duration(milliseconds: 5200);
   static const Duration tether = Duration(milliseconds: 700);
   static const Duration countdownTick = Duration(milliseconds: 380);

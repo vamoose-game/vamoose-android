@@ -7,8 +7,7 @@ import 'level_spec.dart';
 import 'lock_feature.dart';
 import 'restraint.dart';
 
-/// Freezes [LevelSpec.frozen] blocks, [LevelSpec.thickIce] of them under
-/// two layers of ice.
+/// Freezes a block under each number of layers in [LevelSpec.ice].
 ///
 /// A frozen block is a plain block (no lock, key or turn) with at least as
 /// many neighbours as layers of ice, so it can always thaw. Ice is put
@@ -21,8 +20,11 @@ class IceFeature implements LevelFeature {
   @override
   Board? addTo(Board board, LevelSpec spec, Random random) {
     Board? current = board;
-    for (var added = 0; added < spec.frozen && current != null; added++) {
-      current = _freezeOne(current, added < spec.thickIce ? 2 : 1, random);
+    for (final layers in spec.ice) {
+      if (current == null) {
+        return null;
+      }
+      current = _freezeOne(current, layers, random);
     }
     return current;
   }

@@ -62,6 +62,9 @@ final class Board {
 
   bool get hasIce => _blocks.values.any((block) => block.isFrozen);
 
+  /// Whether a block has more than one layer of ice.
+  bool get hasThickIce => _blocks.values.any((block) => block.ice > 1);
+
   bool get hasTwins =>
       twins.any((pair) => contains(pair.first) && contains(pair.second));
 

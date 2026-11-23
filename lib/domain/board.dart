@@ -48,6 +48,8 @@ final class Board {
 
   bool get hasTurningBlocks => _blocks.values.any((block) => block.turns);
 
+  bool get hasCountdowns => _blocks.values.any((block) => block.hasCountdown);
+
   bool contains(int id) => _blocks.containsKey(id);
 
   Block blockById(int id) => _blocks[id]!;
@@ -83,13 +85,56 @@ final class Board {
     }
     final blocker = blockerOf(block);
     if (blocker == null) {
-      return BlockLeaves(block, travel: block.travelWithin(size));
+      return BlockLeaves(
+        block,
+        travel: block.travelWithin(size),
+        runOuts: [
+          for (final other in blocks)
+            if (other.id != id && other.count == 1) other,
+        ],
+      );
     }
     return BlockBumps(block, blocker: blocker);
   }
 
+  /// The ids of the blocks [block] waits on directly: every block in its
+  /// way, nearest first, then the block with the key to its lock. A turning
+  /// block looks the way it faces now.
+  Iterable<int> holdersOf(Block block) sync* {
+    final seen = <int>{};
+    final front = block.front;
+    var row = front.row + block.direction.rowStep;
+    var column = front.column + block.direction.columnStep;
+    while (row >= 0 && row < size && column >= 0 && column < size) {
+      final id = _grid[row * size + column];
+      if (id != _empty && id != block.id && seen.add(id)) {
+        yield id;
+      }
+      row += block.direction.rowStep;
+      column += block.direction.columnStep;
+    }
+    if (holdOn(block) case final hold? when seen.add(hold.holderId)) {
+      yield hold.holderId;
+    }
+  }
+
+  /// The ids of every block that has to leave before [block] can: the ones
+  /// it waits on, the ones they wait on, and so on.
+  Set<int> waitsOn(Block block) {
+    final waiting = <int>{};
+    final todo = [block];
+    while (todo.isNotEmpty) {
+      for (final id in holdersOf(todo.removeLast())) {
+        if (id != block.id && waiting.add(id)) {
+          todo.add(_blocks[id]!);
+        }
+      }
+    }
+    return waiting;
+  }
+
   /// The board after block [id] leaves: every turning block left on the
-  /// board turns a quarter clockwise.
+  /// board turns a quarter clockwise and every countdown counts down.
   Board without(int id) {
     final gone = _blocks[id];
     if (gone == null) {
@@ -103,7 +148,7 @@ final class Board {
       size,
       {
         for (final block in _blocks.values)
-          if (block.id != id) block.id: block.turned(),
+          if (block.id != id) block.id: block.turned().countedDown(),
       },
       grid,
       restraints,
@@ -112,6 +157,20 @@ final class Board {
 
   Board restrainedBy(Iterable<Restraint> added) =>
       Board._(size, _blocks, _grid, [...restraints, ...added]);
+
+  /// The same board with a countdown of [counts] moves on each block in it.
+  Board counting(Map<int, int> counts) => Board._(
+    size,
+    {
+      for (final block in _blocks.values)
+        block.id: switch (counts[block.id]) {
+          final count? => block.withCount(count),
+          null => block,
+        },
+    },
+    _grid,
+    restraints,
+  );
 
   /// The same board with the blocks in [facing] made turning blocks that
   /// start facing the given directions.
@@ -129,7 +188,8 @@ final class Board {
   );
 
   /// Whether the board clears whatever order the player picks: from every
-  /// position a player can reach, some block can still leave.
+  /// position a player can reach, some block can still leave. Countdowns
+  /// only ever cost stars, never moves, so they play no part here.
   ///
   /// Plain blocks and locks only ever free up as blocks leave, so with no
   /// turning blocks one greedy pass decides it. Turning blocks change

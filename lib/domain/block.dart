@@ -9,7 +9,9 @@ class Block {
     required this.length,
     required this.direction,
     this.turns = false,
-  }) : assert(!turns || length == 1, 'Only 1×1 blocks can turn');
+    this.count,
+  }) : assert(!turns || length == 1, 'Only 1×1 blocks can turn'),
+       assert(count == null || count > 0, 'A countdown shows 1 or more');
 
   final int id;
   final int row;
@@ -21,7 +23,14 @@ class Block {
   /// time another block leaves the board.
   final bool turns;
 
+  /// The moves a countdown block has left: every other block that leaves
+  /// counts it down by one, and it must leave while it shows 1 or more.
+  /// Null for a block without a countdown.
+  final int? count;
+
   bool get isVertical => direction.isVertical;
+
+  bool get hasCountdown => count != null;
 
   List<Cell> get cells => [
     for (var offset = 0; offset < length; offset++)
@@ -57,6 +66,13 @@ class Block {
   /// This block a quarter turn on if it turns, else this block.
   Block turned() => turns ? copyWith(direction: direction.clockwise) : this;
 
+  /// This block one move further down its countdown, if it has one. At 0
+  /// it has run out and goes on as a block without a countdown.
+  Block countedDown() => switch (count) {
+    null => this,
+    final count => withCount(count > 1 ? count - 1 : null),
+  };
+
   Block copyWith({Direction? direction, bool? turns}) => Block(
     id: id,
     row: row,
@@ -64,5 +80,17 @@ class Block {
     length: length,
     direction: direction ?? this.direction,
     turns: turns ?? this.turns,
+    count: count,
+  );
+
+  /// This block with [count] moves left, or no countdown when null.
+  Block withCount(int? count) => Block(
+    id: id,
+    row: row,
+    column: column,
+    length: length,
+    direction: direction,
+    turns: turns,
+    count: count,
   );
 }

@@ -6,6 +6,7 @@ import 'package:vamoose/domain/board.dart';
 import 'package:vamoose/domain/chapters.dart';
 import 'package:vamoose/domain/countdown_feature.dart';
 import 'package:vamoose/domain/countdowns.dart';
+import 'package:vamoose/domain/level.dart';
 import 'package:vamoose/domain/level_codec.dart';
 import 'package:vamoose/domain/pace/pace_model.dart';
 import 'package:vamoose/domain/pace/player.dart';
@@ -98,43 +99,49 @@ void main() {
     expectToTheEnd(51, turnersIn);
   });
 
-  test('frozen blocks arrive at level 91, thick ice at 201', () {
-    for (var number = 1; number < 91; number++) {
-      expect(frozenIn(number), 0, reason: 'level $number');
-    }
-    expect(frozenIn(91), 1);
-    expect(levels[90].board.blocks.where((b) => b.isFrozen).single.ice, 1);
-    expectToTheEnd(91, frozenIn);
-    for (final level in levels) {
-      final board = level.board;
-      final reason = 'level ${level.number}';
-      for (final block in board.blocks.where((block) => block.isFrozen)) {
-        expect(block.ice, inInclusiveRange(1, 2), reason: reason);
-        if (level.number < 201) {
-          expect(block.ice, 1, reason: reason);
-        }
-        expect(block.turns || block.hasCountdown, isFalse, reason: reason);
-        expect(board.twinOf(block), isNull, reason: reason);
-        expect(
-          locksOf(
-            board,
-          ).where((lock) => lock.blockId == block.id || lock.keyId == block.id),
-          isEmpty,
-          reason: reason,
-        );
-        expect(
-          board.neighboursOf(block).length,
-          greaterThanOrEqualTo(block.ice),
-          reason: reason,
-        );
+  test(
+    'frozen blocks arrive at level 91, thick ice at 201, thicker at 281',
+    () {
+      for (var number = 1; number < 91; number++) {
+        expect(frozenIn(number), 0, reason: 'level $number');
       }
-      expect(frozenIn(level.number), lessThanOrEqualTo(3), reason: reason);
-    }
-    expect(
-      levels.any((level) => level.board.blocks.any((block) => block.ice == 2)),
-      isTrue,
-    );
-  });
+      expect(frozenIn(91), 1);
+      expect(levels[90].board.blocks.where((b) => b.isFrozen).single.ice, 1);
+      expectToTheEnd(91, frozenIn);
+      for (final level in levels) {
+        final board = level.board;
+        final reason = 'level ${level.number}';
+        for (final block in board.blocks.where((block) => block.isFrozen)) {
+          expect(block.ice, inInclusiveRange(1, 3), reason: reason);
+          expect(block.cracks, 0, reason: reason);
+          if (level.number < 201) {
+            expect(block.ice, 1, reason: reason);
+          } else if (level.number < 281) {
+            expect(block.ice, lessThanOrEqualTo(2), reason: reason);
+          }
+          expect(block.turns || block.hasCountdown, isFalse, reason: reason);
+          expect(board.twinOf(block), isNull, reason: reason);
+          expect(
+            locksOf(board).where(
+              (lock) => lock.blockId == block.id || lock.keyId == block.id,
+            ),
+            isEmpty,
+            reason: reason,
+          );
+          expect(
+            board.neighboursOf(block).length,
+            greaterThanOrEqualTo(block.ice),
+            reason: reason,
+          );
+        }
+        expect(frozenIn(level.number), lessThanOrEqualTo(3), reason: reason);
+      }
+      bool thick(Level level, int ice) =>
+          level.board.blocks.any((block) => block.ice == ice);
+      expect(levels.firstWhere((level) => thick(level, 2)).number, 201);
+      expect(levels.firstWhere((level) => thick(level, 3)).number, 281);
+    },
+  );
 
   test('twin blocks arrive at level 131, one color per pair', () {
     for (var number = 1; number < 131; number++) {

@@ -5,8 +5,7 @@ import 'package:vamoose/domain/level_spec.dart';
 typedef Mix = ({
   int locks,
   int turners,
-  int frozen,
-  int thickIce,
+  List<int> ice,
   int twins,
   int countdowns,
   int spare,
@@ -29,8 +28,9 @@ typedef Mix = ({
 ///   the mechanics met so far, and every fifth level is a breather with a
 ///   block and a lock pair fewer, as build 9's had a pair fewer. From 171
 ///   on, every tenth level has all five mechanics at once.
-/// - More of each mechanic joins as the boards grow, frozen blocks get
-///   thick ice (two layers) from 201, and countdowns spare fewer moves.
+/// - More of each mechanic joins as the boards grow, and countdowns spare
+///   fewer moves. Ice gets thicker: one frozen block a level has two layers
+///   from 201, and from 281 one has three and another two.
 abstract final class Curriculum {
   static const int firstLock = 11;
   static const int firstTurn = 51;
@@ -91,8 +91,7 @@ abstract final class Curriculum {
       locks: mix.locks,
       keyDepth: _keyDepth(level),
       turners: mix.turners,
-      frozen: mix.frozen,
-      thickIce: mix.thickIce,
+      ice: mix.ice,
       twins: mix.twins,
       countdowns: mix.countdowns,
       spare: mix.spare,
@@ -111,8 +110,7 @@ abstract final class Curriculum {
     }) => (
       locks: locks,
       turners: level < firstTurn ? 0 : turners,
-      frozen: level < firstIce ? 0 : frozen,
-      thickIce: level < firstIce ? 0 : _thickIce(level, frozen),
+      ice: level < firstIce ? const [] : _iceLayers(level, frozen),
       twins: level < firstTwin ? 0 : twins,
       countdowns: level < firstCountdown ? 0 : countdowns,
       spare: _spare(level),
@@ -182,11 +180,18 @@ abstract final class Curriculum {
     _ => 3,
   };
 
-  static int _thickIce(int level, int frozen) => switch (level) {
-    < 201 => 0,
-    < 281 => frozen > 0 ? 1 : 0,
-    _ => frozen > 1 ? 2 : frozen,
-  };
+  /// Layers of ice on each of [frozen] blocks, thickest first.
+  static List<int> _iceLayers(int level, int frozen) {
+    final thick = switch (level) {
+      < 201 => const <int>[],
+      < 281 => const [2],
+      _ => const [3, 2],
+    };
+    return [
+      for (var block = 0; block < frozen; block++)
+        block < thick.length ? thick[block] : 1,
+    ];
+  }
 
   static int _maxTwins(int level) => switch (level) {
     < 151 => 1,

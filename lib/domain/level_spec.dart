@@ -8,8 +8,7 @@ class LevelSpec {
     this.turners = 0,
     this.countdowns = 0,
     this.spare = 0,
-    this.frozen = 0,
-    this.thickIce = 0,
+    this.ice = const [],
     this.twins = 0,
   });
 
@@ -28,9 +27,8 @@ class LevelSpec {
   /// Moves a countdown gives on top of the ones its block truly needs.
   final int spare;
 
-  /// How many blocks are frozen, and how many of those under two layers.
-  final int frozen;
-  final int thickIce;
+  /// The layers of ice on each frozen block, thickest first.
+  final List<int> ice;
 
   /// How many pairs of twins.
   final int twins;

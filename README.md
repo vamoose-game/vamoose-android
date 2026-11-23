@@ -7,12 +7,13 @@ Android · Flutter · no backend · version 1.1.0
 ## Game
 
 - 360 levels in 12 chapters, boards from 6×6 to 8×8
-- Every level starts with 3 stars; each bump costs one, and the third bump fails the level
+- Every level starts with 3 stars; each miss costs one (a bump, or a countdown block that runs out), and the third miss fails the level
 - A clock on every level: 10 s for levels 1–10, then a little more each tier of 10–20 levels, up to 38 s (see [Levels and timers](tool/levels_report.md))
 - A failed level costs a life: 5 lives, one back every 20 minutes, +1 with a video, or refill all for 120 coins
 - Extra time: a fifth of the level's clock (2–5 s) before the first move, one per try (start with 1, then 30 coins each)
 - Locked blocks from level 11: a block with a padlock moves only after the block with its key has left; up to three pairs (gold, silver, bronze)
 - Turning blocks from level 21 to the end: round 1×1 blocks that turn a quarter clockwise every time another block leaves; they share levels with locks
+- Countdown blocks from level 26 to the end, on two levels in five: a block with a number counts down every time another block leaves, and must leave before it reaches 0 or it costs a star. Up to three a level, and an order that saves them all always exists (most urgent first); with two or more, the order mostly matters. The hint clears the way of the most urgent one
 - Every level can be cleared in any order: you can never get stuck
 - Coins: start with 100 and 3 hints; +10 for a first clear and +5 for each new star, ×2 with a video once per level
 - Hints: 50 coins or a short video
@@ -23,15 +24,17 @@ Android · Flutter · no backend · version 1.1.0
 
 ## Levels and timers
 
-`tool/generate_levels.dart` builds every level from a curriculum (`tool/curriculum.dart`) and times it with a player simulation (`lib/domain/pace`): 400 simulated players, with spread-out speed, accuracy and practice, look for free blocks, tap them with Fitts' law timing, misread now and then (a bump) and rush when the clock runs low. Each tier of 10–20 levels gets the fewest seconds, more than the tier before, that still let
+`tool/generate_levels.dart` builds every level from a curriculum (`tool/curriculum.dart`) and times it with a player simulation (`lib/domain/pace`): 400 simulated players, with spread-out speed, accuracy and practice, look for free blocks, tap them with Fitts' law timing, misread now and then (a bump) and rush when the clock runs low. With countdown blocks on the board they mostly work on the most urgent one, take time to work out its way, and now and then waste a move and let one run out. Each tier of 10–20 levels gets the fewest seconds, more than the tier before, that still let
 
 - 60–78 % of players clear each level on the first try (gentler early on),
 - 90 % clear each level within three tries, and
 - the clock stop at most 5 % of the quickest players.
 
-So a tier ends tight and the next one breathes again. About 18 % of first tries fail overall. Levels 1–10 keep 10 s, so their boards are drawn until they are fair at 10 s.
+So a tier ends tight and the next one breathes again. About 20 % of first tries fail overall, up from 18 % before countdown blocks. Levels 1–10 keep 10 s, so their boards are drawn until they are fair at 10 s.
 
-No level has fewer blocks than in build 9, or fewer locks and turning blocks together than build 9 had locks. Every level but 9 also takes the simulated players at least as long to clear with no clock as the level with its number in build 9 (`test/fixtures/levels_build9.json`). Level 9 takes 9.2 s against 9.7 s: build 9 had no clock, and its level 9 would not be fair at 10 s, so level 9 takes the hardest board that is. Turning blocks are placed only where no order of moves can lead to a dead end (`Board.isSolvable`). The daily puzzle is timed for its own board and for a new player, so that 60 % clear it on the first try and 90 % within three tries, with a small margin.
+No level has fewer blocks than in build 9, or fewer locks and turning blocks together than build 9 had locks. Every level but 9 also takes the simulated players at least as long to clear with no clock as the level with its number in build 9 (`test/fixtures/levels_build9.json`). Level 9 takes 9.2 s against 9.7 s: build 9 had no clock, and its level 9 would not be fair at 10 s, so level 9 takes the hardest board that is. Turning blocks are placed only where no order of moves can lead to a dead end (`Board.isSolvable`).
+
+A countdown block is a plain block that waits on at least two others and on no turning block. Its number is the moves it truly needs, every block in its way and itself, when the most urgent one goes first, plus spare moves: two up to level 45, one up to 240, then none for the most urgent one on levels with locks (the others always keep one, so a wasted move never costs more than a star). An exact plan (`Countdowns`, Lawler's rule) proves an order that saves every countdown block exists, and the hint follows it. Working out a countdown block's way takes time, so a countdown level takes the first board drawn that is fair at the clock the rest of its tier needs: countdowns make their own levels harder (77 % clear them on the first try, against 82 % for the same levels before) and leave every clock as it was. The levels without countdown blocks are exactly as in build 10. The daily puzzle is timed for its own board and for a new player, so that 60 % clear it on the first try and 90 % within three tries, with a small margin.
 
 ## Run
 
@@ -51,7 +54,7 @@ flutter test
 
 | Path | What |
 | --- | --- |
-| `lib/domain` | Board, tap rules, restraints (locks), turning blocks, stars, chapters, level generator and its features |
+| `lib/domain` | Board, tap rules, restraints (locks), turning and countdown blocks, the countdown plan, stars, chapters, level generator and its features |
 | `lib/domain/pace` | Player simulation that times levels |
 | `lib/data` | Local storage and level catalog |
 | `lib/state` | Settings, progress, coins, hints, extra time, lives, daily streak, themes, game session and its clock |

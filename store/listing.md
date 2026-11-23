@@ -25,6 +25,7 @@ Every block has an arrow. Tap it and it slides that way. A clear path sends it o
 • Three stars per level: keep them by not bumping
 • Locked blocks: clear the block with the key to open the lock
 • Turning blocks: round blocks that turn every time another block leaves
+• Countdown blocks: every block that leaves counts them down, so get them out in time
 • Lives: a failed level costs one, and they come back over time
 • Lives for coins or a short video, extra time for coins, hints for either
 • Daily streak: collect coins 7 days in a row, open the day-7 chest and race a new daily puzzle
@@ -52,3 +53,7 @@ New: coins, a daily streak with a day-7 chest, and two board themes, Wood and Ni
 ## Release notes, 1.1.0 (10)
 
 Beat the clock: every level now has a timer and three stars to keep. New turning blocks from level 21, the first lock at level 11, harder levels from the start, lives, extra time and a store.
+
+## Release notes, 1.2.0 (11)
+
+New: countdown blocks from level 26. Every block that leaves counts them down; get them out before they reach 0, or lose a star. Up to three on a level, and the order matters. Levels with countdown blocks are a little harder; every one can be saved, and the hint shows the way.

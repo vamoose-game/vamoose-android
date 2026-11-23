@@ -7,7 +7,9 @@ enum Sound {
   star(3),
   tick(1),
   fail(1),
-  boost(1);
+  boost(1),
+  crack(1),
+  shatter(1);
 
   const Sound(this.variants);
 

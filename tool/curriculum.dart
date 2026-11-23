@@ -1,39 +1,53 @@
-import 'dart:math';
-
 import 'package:vamoose/domain/chapters.dart';
 import 'package:vamoose/domain/level_spec.dart';
+
+/// The mechanics a level uses, and how many of each.
+typedef Mix = ({
+  int locks,
+  int turners,
+  int frozen,
+  int thickIce,
+  int twins,
+  int countdowns,
+  int spare,
+  bool rest,
+});
 
 /// What each level asks of the player: the board, how many blocks, how
 /// tangled they are and which mechanics show up.
 ///
 /// - Every level has a block more than in build 9 (as many on a breather
-///   and on levels 21 and 26, which bring in turning and countdown blocks),
-///   is at least as tangled, and its locks and turning blocks together are
-///   at least build 9's locks.
+///   and on the levels that bring in a mechanic), is at least as tangled,
+///   and its mechanics together (lock pairs, turning blocks, frozen blocks,
+///   twin pairs and countdown blocks) are at least build 9's locks.
 /// - Levels 1–10: plain blocks, already a few chains to untangle.
-/// - Level 11: the first key and lock.
-/// - Level 21: the first turning block; from 22 on, locks and turning blocks
-///   also share levels.
-/// - Level 26: the first countdown block, with a lock and no turning block,
-///   and again on level 29.
-/// - From 31 on, levels cycle through five mixes: both mechanics, turning
-///   blocks with countdowns, both again, locks with countdowns and a
-///   breather. So two levels in five have countdown blocks, to the end.
-/// - Breathers (every 5th level) have a block and a lock pair fewer, as
-///   build 9's had a pair fewer. The levels that bring in a mechanic have a
-///   block fewer.
-/// - More lock pairs, turning blocks and countdown blocks join as the boards
-///   grow, and countdowns spare fewer moves: two up to level 45, one up to
-///   240, then none on the levels that pair them with locks.
+/// - A new mechanic every 40 levels: locks at 11, turning blocks at 51,
+///   frozen blocks at 91, twin blocks at 131 and countdown blocks at 171.
+///   The level that brings one in has a block fewer and keeps the others
+///   simple; from then on it joins the mix and stays to the end.
+/// - From level 12 on, levels cycle through five mixes, each using some of
+///   the mechanics met so far, and every fifth level is a breather with a
+///   block and a lock pair fewer, as build 9's had a pair fewer. From 171
+///   on, every tenth level has all five mechanics at once.
+/// - More of each mechanic joins as the boards grow, frozen blocks get
+///   thick ice (two layers) from 201, and countdowns spare fewer moves.
 abstract final class Curriculum {
   static const int firstLock = 11;
-  static const int firstTurn = 21;
-  static const int firstCountdown = 26;
+  static const int firstTurn = 51;
+  static const int firstIce = 91;
+  static const int firstTwin = 131;
+  static const int firstCountdown = 171;
   static const int restEvery = 5;
   static const int restBlocks = 1;
 
-  /// Levels before 31 with countdown blocks.
-  static const Set<int> _earlyCountdowns = {firstCountdown, 29};
+  /// Levels that bring in a mechanic.
+  static const Set<int> firsts = {
+    firstLock,
+    firstTurn,
+    firstIce,
+    firstTwin,
+    firstCountdown,
+  };
 
   /// Blocks on the board by level, between these keyframes.
   static const List<(int, double)> _blocks = [
@@ -77,92 +91,118 @@ abstract final class Curriculum {
       locks: mix.locks,
       keyDepth: _keyDepth(level),
       turners: mix.turners,
+      frozen: mix.frozen,
+      thickIce: mix.thickIce,
+      twins: mix.twins,
       countdowns: mix.countdowns,
       spare: mix.spare,
     );
   }
 
-  static ({int locks, int turners, int countdowns, int spare, bool rest})
-  mixFor(int level) {
+  static Mix mixFor(int level) {
     final breather = level % restEvery == 0;
-    final rest =
-        breather ||
-        level == firstLock ||
-        level == firstTurn ||
-        level == firstCountdown;
+    final rest = breather || firsts.contains(level);
+    Mix mix({
+      int locks = 0,
+      int turners = 0,
+      int frozen = 0,
+      int twins = 0,
+      int countdowns = 0,
+    }) => (
+      locks: locks,
+      turners: level < firstTurn ? 0 : turners,
+      frozen: level < firstIce ? 0 : frozen,
+      thickIce: level < firstIce ? 0 : _thickIce(level, frozen),
+      twins: level < firstTwin ? 0 : twins,
+      countdowns: level < firstCountdown ? 0 : countdowns,
+      spare: _spare(level),
+      rest: rest,
+    );
+
     if (level < firstLock) {
-      return (locks: 0, turners: 0, countdowns: 0, spare: 0, rest: rest);
-    }
-    if (level < firstTurn) {
-      return (
-        locks: breather ? 0 : 1,
-        turners: 0,
-        countdowns: 0,
-        spare: 0,
-        rest: rest,
-      );
-    }
-    if (level <= 30) {
-      final counting = _earlyCountdowns.contains(level);
-      return (
-        locks: breather || level == firstTurn ? 0 : 1,
-        turners: counting ? 0 : 1,
-        countdowns: counting ? 1 : 0,
-        spare: counting ? _spare(level) : 0,
-        rest: rest,
-      );
+      return mix();
     }
     final locks = _maxLocks(level);
+    // A level that brings in a mechanic: that one, and a lock pair.
+    switch (level) {
+      case firstLock:
+        return mix(locks: 1);
+      case firstTurn:
+        return mix(turners: 1);
+      case firstIce:
+        return mix(locks: 1, frozen: 1);
+      case firstTwin:
+        return mix(locks: 1, twins: 1);
+      case firstCountdown:
+        return mix(locks: 1, countdowns: 1);
+    }
+    if (level < firstTurn) {
+      return mix(locks: breather ? 0 : locks);
+    }
     final turners = _maxTurners(level);
+    final frozen = _maxFrozen(level);
+    final twins = _maxTwins(level);
     final countdowns = _maxCountdowns(level);
+    final everything = level >= firstCountdown && level % 10 == 3;
     return switch (level % restEvery) {
-      1 => (
-        locks: locks,
+      1 => mix(locks: locks, turners: turners, frozen: frozen),
+      2 => mix(
         turners: turners,
-        countdowns: 0,
-        spare: 0,
-        rest: false,
-      ),
-      2 => (
-        locks: 0,
-        turners: turners,
-        countdowns: max(1, countdowns - 1),
-        spare: max(1, _spare(level)),
-        rest: false,
-      ),
-      3 => (locks: locks, turners: 1, countdowns: 0, spare: 0, rest: false),
-      4 => (
-        locks: locks,
-        turners: 0,
+        frozen: level < firstTwin ? frozen : 0,
+        twins: twins,
         countdowns: countdowns,
-        spare: _spare(level),
-        rest: false,
       ),
-      _ => (locks: locks - 1, turners: 1, countdowns: 0, spare: 0, rest: true),
+      3 => mix(
+        locks: locks,
+        turners: 1,
+        frozen: frozen,
+        twins: twins,
+        countdowns: everything ? countdowns : 0,
+      ),
+      4 => mix(locks: locks, frozen: frozen, countdowns: countdowns),
+      _ => mix(locks: locks - 1, turners: 1, twins: 1),
     };
   }
 
   static int _maxLocks(int level) => switch (level) {
-    < 61 => 1,
+    < 31 => 1,
     < 121 => 2,
     _ => 3,
   };
 
   static int _maxTurners(int level) => switch (level) {
-    < 46 => 1,
-    < 91 => 2,
+    < 61 => 1,
+    < 151 => 2,
     _ => 3,
   };
 
-  static int _maxCountdowns(int level) => switch (level) {
-    < 61 => 1,
+  static int _maxFrozen(int level) => switch (level) {
+    < 111 => 1,
     < 181 => 2,
     _ => 3,
   };
 
+  static int _thickIce(int level, int frozen) => switch (level) {
+    < 201 => 0,
+    < 281 => frozen > 0 ? 1 : 0,
+    _ => frozen > 1 ? 2 : frozen,
+  };
+
+  static int _maxTwins(int level) => switch (level) {
+    < 151 => 1,
+    < 241 => 2,
+    _ => 3,
+  };
+
+  static int _maxCountdowns(int level) => switch (level) {
+    < 211 => 1,
+    < 281 => 2,
+    _ => 3,
+  };
+
   static int _spare(int level) => switch (level) {
-    < 46 => 2,
-    < 241 => 1,
+    < 201 => 2,
+    < 281 => 1,
     _ => 0,
   };
 

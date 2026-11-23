@@ -11,7 +11,7 @@ import '../widgets/block_face.dart';
 import '../widgets/glyphs.dart';
 import '../widgets/looping.dart';
 
-enum MarkRole { key, lock }
+enum MarkRole { key, lock, twin }
 
 typedef BlockMark = ({MarkRole role, int pair});
 
@@ -22,6 +22,8 @@ abstract final class BlockMarks {
     Palette.bronze,
   ];
 
+  /// The badge each block carries: lock pairs and twin pairs are each
+  /// numbered from the first, so each pair has its own color.
   static Map<int, BlockMark> of(Board board) {
     final marks = <int, BlockMark>{};
     var pair = 0;
@@ -33,14 +35,23 @@ abstract final class BlockMarks {
           pair++;
       }
     }
+    for (var twins = 0; twins < board.twins.length; twins++) {
+      final (:first, :second) = board.twins[twins];
+      marks[first] = (role: MarkRole.twin, pair: twins);
+      marks[second] = (role: MarkRole.twin, pair: twins);
+    }
     return marks;
   }
 
   static Color colorOf(BlockMark mark) =>
       pairColors[min(mark.pair, pairColors.length - 1)];
+
+  /// The color of pair [pair] in words, for screen readers.
+  static String nameOf(int pair) =>
+      const ['gold', 'silver', 'bronze'][min(pair, pairColors.length - 1)];
 }
 
-enum BadgeIcon { key, padlock, openPadlock }
+enum BadgeIcon { key, padlock, openPadlock, link }
 
 class BlockBadge extends StatelessWidget {
   const BlockBadge({
@@ -81,6 +92,7 @@ class BlockBadge extends StatelessWidget {
             BadgeIcon.key => KeyGlyph(size: glyph),
             BadgeIcon.padlock => PadlockGlyph(size: glyph),
             BadgeIcon.openPadlock => PadlockGlyph(size: glyph, open: true),
+            BadgeIcon.link => LinkGlyph(size: glyph * 1.05),
           },
         ),
       ),
@@ -172,7 +184,7 @@ class _MarkedFaceState extends State<MarkedFace> with TickerProviderStateMixin {
   }
 
   double get _opened {
-    if (widget.mark.role == MarkRole.key) {
+    if (widget.mark.role != MarkRole.lock) {
       return 1;
     }
     if (widget.locked) {
@@ -235,13 +247,15 @@ class _MarkedFaceState extends State<MarkedFace> with TickerProviderStateMixin {
 
   Widget? _badge(double size) {
     final color = BlockMarks.colorOf(widget.mark);
-    if (widget.mark.role == MarkRole.key || widget.locked) {
+    if (widget.mark.role != MarkRole.lock || widget.locked) {
       return Transform.rotate(
         angle: _shakeTurn * pi / 180,
         child: BlockBadge(
-          icon: widget.mark.role == MarkRole.key
-              ? BadgeIcon.key
-              : BadgeIcon.padlock,
+          icon: switch (widget.mark.role) {
+            MarkRole.key => BadgeIcon.key,
+            MarkRole.lock => BadgeIcon.padlock,
+            MarkRole.twin => BadgeIcon.link,
+          },
           size: size,
           color: color,
         ),

@@ -26,7 +26,8 @@ import 'curriculum.dart';
 /// - the clock end the first try of at most [expertTimeOuts] of the quickest
 ///   [expertShare] of players.
 /// The last levels of a tier get tight, the next tier breathes again, and
-/// no level is ever out of reach.
+/// no level is ever out of reach. Every clock then gets
+/// [PaceModel.leeway] seconds more, so none is a race to the last second.
 ///
 /// No level may be easier than the level with its number in build 9
 /// ([previousLevels]): the crowd must take at least as long to clear it with
@@ -36,9 +37,10 @@ import 'curriculum.dart';
 /// would not be fair at [firstTierSeconds], the level takes the hardest fair
 /// board drawn instead.
 ///
-/// A board with countdown blocks is drawn again when more than
-/// [countdownOutOfStars] of the crowd, with no clock, lose all their stars
-/// on it: the order has to matter, but a player who plans must get there.
+/// A board with countdown, frozen or twin blocks is drawn again when more
+/// than [mechanicOutOfStars] of the crowd, with no clock, lose all their
+/// stars on it: those blocks have to make a player think, but a player who
+/// does must get there.
 /// Working out a countdown block's way takes time, so a countdown level
 /// takes the first board that is also fair at the clock the rest of its
 /// tier needs. Then countdown blocks make their own levels harder, rather
@@ -53,7 +55,7 @@ const String previousLevels = 'test/fixtures/levels_build9.json';
 const int draws = 12;
 const int fixedClockDraws = 60;
 const int maxExtraBlocks = 4;
-const double countdownOutOfStars = 0.08;
+const double mechanicOutOfStars = 0.08;
 
 /// First-try floor for the tier starting at [first]: gentler early on.
 double firstTryFloor(int first) => switch (first) {
@@ -161,9 +163,9 @@ void main() {
         final time = trial.finishWithin(0.5);
         if (!time.isFinite ||
             fixedClock && !fairAtFixedClock(board, level) ||
-            board.hasCountdowns &&
-                (trial.outOfStarsRate > countdownOutOfStars ||
-                    !Countdowns.canSaveAll(board))) {
+            (board.hasCountdowns || board.hasIce || board.hasTwins) &&
+                trial.outOfStarsRate > mechanicOutOfStars ||
+            !Countdowns.canSaveAll(board)) {
           continue;
         }
         if (matchBuild9 && time >= floor) {
@@ -256,9 +258,9 @@ void main() {
         stderr.writeln('Levels $first–$last hit the search cap');
       }
     }
-    limits.addAll([for (final _ in range) seconds]);
+    limits.addAll([for (final _ in range) seconds + PaceModel.leeway]);
     previous = seconds;
-    stdout.writeln('Levels $first–$last: $seconds s');
+    stdout.writeln('Levels $first–$last: ${seconds + PaceModel.leeway} s');
   }
 
   final levels = [
@@ -296,6 +298,9 @@ LevelSpec _withBlocks(LevelSpec spec, int blockCount) => LevelSpec(
   turners: spec.turners,
   countdowns: spec.countdowns,
   spare: spec.spare,
+  frozen: spec.frozen,
+  thickIce: spec.thickIce,
+  twins: spec.twins,
 );
 
 class _Report {
@@ -332,9 +337,10 @@ class _Report {
         'players (`lib/domain/pace`) play each level with the practice of '
         'the levels before it. A pass is a clear before the clock ends and '
         'before a third miss: a bump, or a countdown block that runs out. '
-        'Experts are the quickest ${_pct(expertShare)} of players. The '
-        'extra-time column is the first-try pass with the extra-time '
-        'booster, a fifth of the clock '
+        'Experts are the quickest ${_pct(expertShare)} of players. Each '
+        'clock is the fewest seconds that are fair for its tier, plus '
+        '${PaceModel.leeway} s. The extra-time column is the first-try pass '
+        'with the extra-time booster, a fifth of the clock '
         '(${Economy.fewestExtraSeconds}–${Economy.mostExtraSeconds} s).',
       )
       ..writeln()
@@ -391,6 +397,14 @@ class _Report {
   }
 
   String _countdowns() {
+    String from(String name, bool Function(Board board) uses) {
+      final using = [
+        for (final level in levels)
+          if (uses(level.board)) level.number,
+      ];
+      return '$name from level ${using.first} (${using.length} levels)';
+    }
+
     final counting = [
       for (final level in levels)
         if (level.board.hasCountdowns) level,
@@ -404,11 +418,29 @@ class _Report {
         trialAt(level.number, level.timeLimit.inSeconds).averageRunOuts,
     ];
     final saved = counting.every((level) => Countdowns.canSaveAll(level.board));
-    return '${counting.length} levels, from level ${counting.first.number}, '
-        'have countdown blocks (${numbers.length} in all, numbers '
-        '${numbers.reduce(min)}–${numbers.reduce(max)}). '
-        '${saved ? 'Every one has' : 'Not every one has'} an order of moves '
-        'that saves them all. On those levels a first try loses '
+    final thick = levels
+        .where((level) => level.board.blocks.any((block) => block.ice > 1))
+        .length;
+    final all = levels.where((level) {
+      final board = level.board;
+      return board.restraints.isNotEmpty &&
+          board.hasTurningBlocks &&
+          board.hasIce &&
+          board.hasTwins &&
+          board.hasCountdowns;
+    }).length;
+    return 'Mechanics: ${from('locks', (board) => board.restraints.isNotEmpty)}, '
+        '${from('turning blocks', (board) => board.hasTurningBlocks)}, '
+        '${from('frozen blocks', (board) => board.hasIce)} '
+        '(thick ice on $thick), '
+        '${from('twin blocks', (board) => board.hasTwins)} and '
+        '${from('countdown blocks', (board) => board.hasCountdowns)}; '
+        '$all levels have all five. '
+        '${levels.every((level) => level.board.isSolvable) ? 'Every' : 'Not every'} '
+        'level clears in any order. '
+        'Countdown numbers run ${numbers.reduce(min)}–${numbers.reduce(max)}, '
+        'and ${saved ? 'every' : 'not every'} countdown level has an order '
+        'of moves that saves them all. On those levels a first try loses '
         '${_mean(runOuts).toStringAsFixed(2)} countdown blocks on average.';
   }
 
@@ -454,10 +486,10 @@ class _Report {
       )
       ..writeln()
       ..writeln(
-        '| Level | Blocks | Locks | Turning | Countdown | Time | Untimed | Build 9 | First try | 3 tries | Bumps | Run-outs |',
+        '| Level | Blocks | Locks | Turning | Frozen | Twins | Countdown | Time | Untimed | Build 9 | First try | 3 tries | Bumps | Run-outs |',
       )
       ..writeln(
-        '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |',
+        '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |',
       );
     for (final level in levels) {
       final seconds = level.timeLimit.inSeconds;
@@ -466,7 +498,8 @@ class _Report {
       final index = level.number - 1;
       _out.writeln(
         '| ${level.number} | ${board.blockCount} | ${board.restraints.length} '
-        '| ${_turning(board)} | ${_countdown(board)} | $seconds s '
+        '| ${_turning(board)} | ${_frozen(board)} | ${board.twins.length} '
+        '| ${_countdown(board)} | $seconds s '
         '| ${untimed[index].toStringAsFixed(1)} s '
         '| ${previous[index].toStringAsFixed(1)} s '
         '| ${_pct(trial.passRate)} | ${_pct(trial.passWithin(3))} '
@@ -499,6 +532,17 @@ class _Report {
 
   int _turning(Board board) =>
       board.blocks.where((block) => block.turns).length;
+
+  /// The frozen blocks on [board], with thick ice marked ×2.
+  String _frozen(Board board) {
+    final ice = [
+      for (final block in board.blocks)
+        if (block.isFrozen) block.ice,
+    ]..sort();
+    return ice.isEmpty
+        ? '0'
+        : ice.map((layers) => layers > 1 ? '1×2' : '1').join(', ');
+  }
 
   /// The countdown numbers on [board], smallest first, or 0.
   String _countdown(Board board) {

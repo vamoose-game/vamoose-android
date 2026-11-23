@@ -141,6 +141,34 @@ def boost():
     return finish(reverb(notes, seconds=0.8, wet=0.25), 0.45)
 
 
+def highpass(signal, cutoff):
+    spectrum = np.fft.rfft(signal)
+    freqs = np.fft.rfftfreq(len(signal), 1 / RATE)
+    spectrum *= 1 / np.sqrt(1 + (cutoff / np.maximum(freqs, 1)) ** 4)
+    return np.fft.irfft(spectrum, len(signal))
+
+
+def crack():
+    """Ice losing a layer: a dry, glassy snap with a short ring."""
+    t = timeline(0.25)
+    snap = highpass(noise(0.25, 17), 2500) * envelope(t, 0.0004, 0.006)
+    ring = place([(0.004, bell(3135.96, 0.25, 0.04)), (0.012, bell(4186.01, 0.2, 0.03))], 0.25)
+    return finish(reverb(snap + 0.5 * ring, seconds=0.4, wet=0.12), 0.42)
+
+
+def shatter():
+    """Ice breaking: a burst of glass and a cascade of tiny chimes."""
+    t = timeline(0.7)
+    burst = highpass(noise(0.7, 19), 1800) * envelope(t, 0.001, 0.05)
+    rng = np.random.default_rng(23)
+    chimes = place(
+        [(0.01 + 0.045 * i + rng.uniform(0, 0.02), bell(f, 0.35, 0.07) * (0.9 - 0.12 * i))
+         for i, f in enumerate([2637.02, 3520.0, 2959.96, 3951.07, 3135.96, 4186.01])],
+        0.7,
+    )
+    return finish(reverb(0.55 * burst + chimes, seconds=0.8, wet=0.22), 0.5)
+
+
 def main():
     for old in OUT.glob('*.wav'):
         old.unlink()
@@ -155,6 +183,8 @@ def main():
     write('tick', tick())
     write('fail', fail())
     write('boost', boost())
+    write('crack', crack())
+    write('shatter', shatter())
 
 
 if __name__ == '__main__':

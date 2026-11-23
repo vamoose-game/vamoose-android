@@ -46,7 +46,7 @@ void main() {
     await tester.tapAndWait(find.text('Play'));
 
     expect(find.text('Level 2'), findsOneWidget);
-    expect(find.text('0:10'), findsOneWidget);
+    expect(find.text('0:12'), findsOneWidget);
 
     await tester.close();
   });

@@ -26,6 +26,21 @@ void main() {
   int countdownsIn(int number) => levels[number - 1].board.blocks
       .where((block) => block.hasCountdown)
       .length;
+  int frozenIn(int number) =>
+      levels[number - 1].board.blocks.where((block) => block.isFrozen).length;
+  int twinPairsIn(int number) => levels[number - 1].board.twins.length;
+
+  /// Every 10 levels from [first] to the end use the mechanic at least once.
+  void expectToTheEnd(int first, int Function(int number) uses) {
+    for (var from = first; from <= catalog.count; from += 10) {
+      expect(
+        [for (var n = from; n < min(from + 10, catalog.count + 1); n++) uses(n)]
+            .any((count) => count > 0),
+        isTrue,
+        reason: 'levels $from–${from + 9}',
+      );
+    }
+  }
 
   test('ships one level per slot', () {
     expect(catalog.count, Chapters.levelCount);
@@ -68,45 +83,110 @@ void main() {
     expect(levels.any((level) => locksOf(level.board).length == 3), isTrue);
   });
 
-  test('turning blocks arrive at level 21 and stay to the end', () {
-    for (var number = 1; number <= 20; number++) {
+  test('turning blocks arrive at level 51 and stay to the end', () {
+    for (var number = 1; number < 51; number++) {
       expect(turnersIn(number), 0, reason: 'level $number');
     }
-    expect(turnersIn(21), 1);
+    expect(turnersIn(51), 1);
+    expect(locksOf(levels[50].board), isEmpty);
     for (final level in levels) {
       for (final block in level.board.blocks.where((block) => block.turns)) {
         expect(block.length, 1, reason: 'level ${level.number}');
       }
       expect(turnersIn(level.number), lessThanOrEqualTo(3));
     }
-    for (var first = 21; first <= catalog.count; first += 10) {
-      expect(
-        [for (var n = first; n < first + 10; n++) turnersIn(n)]
-            .any((turners) => turners > 0),
-        isTrue,
-        reason: 'levels $first–${first + 9}',
-      );
-    }
+    expectToTheEnd(51, turnersIn);
   });
 
-  test('countdown blocks arrive at level 26 and stay to the end', () {
-    for (var number = 1; number < 26; number++) {
-      expect(countdownsIn(number), 0, reason: 'level $number');
+  test('frozen blocks arrive at level 91, thick ice at 201', () {
+    for (var number = 1; number < 91; number++) {
+      expect(frozenIn(number), 0, reason: 'level $number');
     }
-    expect(countdownsIn(26), 1);
-    for (var first = 26; first <= catalog.count; first += 10) {
-      expect(
-        [
-          for (var n = first; n < min(first + 10, catalog.count + 1); n++)
-            countdownsIn(n),
-        ].any((countdowns) => countdowns > 0),
-        isTrue,
-        reason: 'levels $first–${first + 9}',
-      );
+    expect(frozenIn(91), 1);
+    expect(levels[90].board.blocks.where((b) => b.isFrozen).single.ice, 1);
+    expectToTheEnd(91, frozenIn);
+    for (final level in levels) {
+      final board = level.board;
+      final reason = 'level ${level.number}';
+      for (final block in board.blocks.where((block) => block.isFrozen)) {
+        expect(block.ice, inInclusiveRange(1, 2), reason: reason);
+        if (level.number < 201) {
+          expect(block.ice, 1, reason: reason);
+        }
+        expect(block.turns || block.hasCountdown, isFalse, reason: reason);
+        expect(board.twinOf(block), isNull, reason: reason);
+        expect(
+          locksOf(
+            board,
+          ).where((lock) => lock.blockId == block.id || lock.keyId == block.id),
+          isEmpty,
+          reason: reason,
+        );
+        expect(
+          board.neighboursOf(block).length,
+          greaterThanOrEqualTo(block.ice),
+          reason: reason,
+        );
+      }
+      expect(frozenIn(level.number), lessThanOrEqualTo(3), reason: reason);
     }
     expect(
+      levels.any((level) => level.board.blocks.any((block) => block.ice == 2)),
+      isTrue,
+    );
+  });
+
+  test('twin blocks arrive at level 131, one color per pair', () {
+    for (var number = 1; number < 131; number++) {
+      expect(twinPairsIn(number), 0, reason: 'level $number');
+    }
+    expect(twinPairsIn(131), 1);
+    expectToTheEnd(131, twinPairsIn);
+    for (final level in levels) {
+      final board = level.board;
+      final reason = 'level ${level.number}';
+      expect(board.twins.length, lessThanOrEqualTo(3), reason: reason);
+      final twins = [
+        for (final pair in board.twins) ...[pair.first, pair.second],
+      ];
+      expect(twins.toSet(), hasLength(twins.length), reason: reason);
+      for (final pair in board.twins) {
+        final first = board.blockById(pair.first);
+        final second = board.blockById(pair.second);
+        for (final twin in [first, second]) {
+          expect(twin.turns || twin.isFrozen, isFalse, reason: reason);
+          expect(twin.hasCountdown, isFalse, reason: reason);
+        }
+        expect(board.waitsOn(first).contains(second.id), isFalse);
+        expect(board.waitsOn(second).contains(first.id), isFalse);
+      }
+    }
+    expect(levels.any((level) => twinPairsIn(level.number) == 3), isTrue);
+  });
+
+  test('a level can have all five mechanics at once', () {
+    final all = levels.where((level) {
+      final board = level.board;
+      return locksOf(board).isNotEmpty &&
+          board.hasTurningBlocks &&
+          board.hasIce &&
+          board.hasTwins &&
+          board.hasCountdowns;
+    });
+
+    expect(all.first.number, greaterThanOrEqualTo(171));
+    expect(all.length, greaterThan(10));
+  });
+
+  test('countdown blocks arrive at level 171 and stay to the end', () {
+    for (var number = 1; number < 171; number++) {
+      expect(countdownsIn(number), 0, reason: 'level $number');
+    }
+    expect(countdownsIn(171), 1);
+    expectToTheEnd(171, countdownsIn);
+    expect(
       levels.where((level) => level.board.hasCountdowns).length,
-      greaterThan(100),
+      greaterThan(80),
     );
     expect(levels.any((level) => countdownsIn(level.number) == 3), isTrue);
   });
@@ -180,8 +260,8 @@ void main() {
         ordered++;
       }
     }
-    expect(several, greaterThan(50));
-    expect(ordered / several, greaterThan(0.8));
+    expect(several, greaterThan(20));
+    expect(ordered / several, greaterThan(0.65));
   });
 
   test('locks and turning blocks also share levels', () {
@@ -190,14 +270,14 @@ void main() {
           level.board.restraints.isNotEmpty && level.board.hasTurningBlocks,
     );
 
-    expect(both.first.number, inInclusiveRange(22, 25));
+    expect(both.first.number, inInclusiveRange(52, 56));
     expect(both.length, greaterThan(100));
   });
 
-  test('the clock starts at 10 s and grows tier by tier', () {
+  test('the clock starts at 12 s and grows tier by tier', () {
     final seconds = [for (final level in levels) level.timeLimit.inSeconds];
 
-    expect(seconds.take(10), everyElement(10));
+    expect(seconds.take(10), everyElement(12));
     for (var index = 1; index < seconds.length; index++) {
       expect(seconds[index], greaterThanOrEqualTo(seconds[index - 1]));
     }
@@ -217,7 +297,7 @@ void main() {
       File('test/fixtures/levels_build9.json').readAsStringSync(),
     );
 
-    test('nor has fewer blocks, or fewer locks and turning blocks', () {
+    test('nor has fewer blocks, or fewer mechanics than it had locks', () {
       for (final level in levels) {
         final before = build9[level.number - 1].board;
         final reason = 'level ${level.number}';
@@ -228,7 +308,11 @@ void main() {
           reason: reason,
         );
         expect(
-          locksOf(level.board).length + turnersIn(level.number),
+          locksOf(level.board).length +
+              turnersIn(level.number) +
+              frozenIn(level.number) +
+              twinPairsIn(level.number) +
+              countdownsIn(level.number),
           greaterThanOrEqualTo(locksOf(before).length),
           reason: reason,
         );
@@ -311,6 +395,6 @@ void main() {
 
     expect(first.board.blockCount, inInclusiveRange(6, 8));
     expect(first.board.movableBlocks, isNotEmpty);
-    expect(first.timeLimit, const Duration(seconds: 10));
+    expect(first.timeLimit, const Duration(seconds: 12));
   });
 }

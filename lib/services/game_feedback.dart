@@ -28,6 +28,18 @@ class GameFeedback {
   /// A countdown block ran out: it costs a star, like a bump.
   void countdownRanOut() => blockBumped();
 
+  /// Ice on a frozen block lost a layer but still holds it.
+  void iceCracked() {
+    _play(Sound.crack);
+    _vibrate(_haptics.light);
+  }
+
+  /// The last layer of ice broke: the block is free.
+  void iceShattered() {
+    _play(Sound.shatter);
+    _vibrate(_haptics.medium);
+  }
+
   void hintShown() => _play(Sound.hint);
 
   void boardCleared() {

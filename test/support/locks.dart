@@ -22,8 +22,7 @@ bool holdsBack(Board board, Lock lock) {
       return current.blockerOf(current.blockById(lock.blockId)) == null;
     }
     for (final id in round) {
-      final block = current.blockById(id);
-      if (current.canLeave(block)) {
+      if (current.contains(id) && current.canLeave(current.blockById(id))) {
         current = current.without(id);
       }
     }

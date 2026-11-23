@@ -26,7 +26,8 @@ import 'curriculum.dart';
 /// - the clock end the first try of at most [expertTimeOuts] of the quickest
 ///   [expertShare] of players.
 /// The last levels of a tier get tight, the next tier breathes again, and
-/// no level is ever out of reach.
+/// no level is ever out of reach. Every clock then gets
+/// [PaceModel.leeway] seconds more, so none is a race to the last second.
 ///
 /// No level may be easier than the level with its number in build 9
 /// ([previousLevels]): the crowd must take at least as long to clear it with
@@ -256,9 +257,9 @@ void main() {
         stderr.writeln('Levels $first–$last hit the search cap');
       }
     }
-    limits.addAll([for (final _ in range) seconds]);
+    limits.addAll([for (final _ in range) seconds + PaceModel.leeway]);
     previous = seconds;
-    stdout.writeln('Levels $first–$last: $seconds s');
+    stdout.writeln('Levels $first–$last: ${seconds + PaceModel.leeway} s');
   }
 
   final levels = [
@@ -332,9 +333,10 @@ class _Report {
         'players (`lib/domain/pace`) play each level with the practice of '
         'the levels before it. A pass is a clear before the clock ends and '
         'before a third miss: a bump, or a countdown block that runs out. '
-        'Experts are the quickest ${_pct(expertShare)} of players. The '
-        'extra-time column is the first-try pass with the extra-time '
-        'booster, a fifth of the clock '
+        'Experts are the quickest ${_pct(expertShare)} of players. Each '
+        'clock is the fewest seconds that are fair for its tier, plus '
+        '${PaceModel.leeway} s. The extra-time column is the first-try pass '
+        'with the extra-time booster, a fifth of the clock '
         '(${Economy.fewestExtraSeconds}–${Economy.mostExtraSeconds} s).',
       )
       ..writeln()

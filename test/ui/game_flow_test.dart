@@ -144,13 +144,13 @@ void main() {
       services,
       home: const GameScreen(mode: CampaignMode(1)),
     );
-    expect(find.text('0:10'), findsOneWidget);
+    expect(find.text('0:12'), findsOneWidget);
 
     await tester.wait(landing + const Duration(milliseconds: 850));
-    expect(find.text('0:10'), findsOneWidget);
+    expect(find.text('0:12'), findsOneWidget);
 
     await tester.wait(const Duration(milliseconds: 250));
-    expect(find.text('0:09'), findsOneWidget);
+    expect(find.text('0:11'), findsOneWidget);
 
     await tester.close();
   });
@@ -440,7 +440,7 @@ void main() {
 
     await tester.tapAndWait(find.byIcon(Icons.pause_rounded));
     expect(find.text('Paused'), findsOneWidget);
-    expect(find.text('Level 3 · 0:10'), findsOneWidget);
+    expect(find.text('Level 3 · 0:12'), findsOneWidget);
 
     await tester.tapAndWait(find.text('Music'));
     expect(services.settings.music, isFalse);
@@ -448,7 +448,7 @@ void main() {
     await tester.wait(const Duration(seconds: 20));
     await tester.tapAndWait(find.text('Resume'));
     expect(find.text('Paused'), findsNothing);
-    expect(find.text('0:10'), findsOneWidget);
+    expect(find.text('0:12'), findsOneWidget);
 
     await tester.close();
   });
@@ -470,7 +470,7 @@ void main() {
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.wait(const Duration(milliseconds: 1500));
     expect(find.text('Time’s up'), findsNothing);
-    expect(find.text('0:09'), findsOneWidget);
+    expect(find.text('0:11'), findsOneWidget);
 
     await tester.close();
   });
@@ -481,7 +481,7 @@ void main() {
     }
     await startGame(tester, services, const CampaignMode(1));
     await tester.wait(const Duration(milliseconds: 1250));
-    expect(find.text('0:09'), findsOneWidget);
+    expect(find.text('0:11'), findsOneWidget);
 
     await tester.tapAndWait(find.text('Get hint'));
     expect(find.text('Need a hint?'), findsOneWidget);
@@ -491,11 +491,11 @@ void main() {
       find.text('Not now'),
       const Duration(milliseconds: 300),
     );
-    expect(find.text('0:09'), findsOneWidget);
+    expect(find.text('0:11'), findsOneWidget);
 
     await tester.wait(const Duration(seconds: 1));
     expect(find.text('Need a hint?'), findsNothing);
-    expect(find.text('0:08'), findsOneWidget);
+    expect(find.text('0:10'), findsOneWidget);
 
     await tester.close();
   });

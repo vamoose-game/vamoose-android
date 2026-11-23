@@ -57,6 +57,9 @@ class DailyPuzzle {
       from: _fewestSeconds,
       seed: seed,
     );
-    return (board: board, timeLimit: Duration(seconds: seconds));
+    return (
+      board: board,
+      timeLimit: Duration(seconds: seconds + PaceModel.leeway),
+    );
   }
 }

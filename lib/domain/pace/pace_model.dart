@@ -127,6 +127,10 @@ final class PaceModel {
   /// Longest untimed try simulated; a guard far above any time limit.
   static const double giveUpAfter = 900;
 
+  /// Seconds every clock gets on top of the fewest that are fair, so no
+  /// level is a race to its very last second.
+  static const int leeway = 2;
+
   final PaceTiming timing;
   final TimePressure pressure;
   final CountdownFocus focus;

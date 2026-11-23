@@ -194,10 +194,10 @@ void main() {
     expect(both.length, greaterThan(100));
   });
 
-  test('the clock starts at 10 s and grows tier by tier', () {
+  test('the clock starts at 12 s and grows tier by tier', () {
     final seconds = [for (final level in levels) level.timeLimit.inSeconds];
 
-    expect(seconds.take(10), everyElement(10));
+    expect(seconds.take(10), everyElement(12));
     for (var index = 1; index < seconds.length; index++) {
       expect(seconds[index], greaterThanOrEqualTo(seconds[index - 1]));
     }
@@ -311,6 +311,6 @@ void main() {
 
     expect(first.board.blockCount, inInclusiveRange(6, 8));
     expect(first.board.movableBlocks, isNotEmpty);
-    expect(first.timeLimit, const Duration(seconds: 10));
+    expect(first.timeLimit, const Duration(seconds: 12));
   });
 }

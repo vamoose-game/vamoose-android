@@ -21,7 +21,7 @@ Tap, slide, clear the board before the clock runs out. 360 levels.
 Every block has an arrow. Tap it and it slides that way. A clear path sends it off the board; a block in the way means a bump, and every bump costs a star. Clear the board before the clock runs out.
 
 • 360 levels in 12 chapters, boards from 6×6 to 8×8
-• A clock on every level, from 10 seconds up, tuned so every level is a race you can win
+• A clock on every level, from 12 seconds up, tuned so every level is a race you can win
 • Three stars per level: keep them by not bumping
 • Locked blocks: clear the block with the key to open the lock
 • Turning blocks: round blocks that turn every time another block leaves

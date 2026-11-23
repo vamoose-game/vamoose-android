@@ -107,6 +107,7 @@ void main() {
 
       for (final (level, intro) in [
         (91, Intros.ice),
+        (201, Intros.thickIce),
         (131, Intros.twins),
         (171, Intros.countdowns),
       ]) {

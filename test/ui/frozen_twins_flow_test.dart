@@ -125,6 +125,78 @@ void main() {
     await tester.close();
   });
 
+  testWidgets('thick ice shows its intro once, at level 201', (tester) async {
+    await seeIntrosBut(Intros.thickIce);
+    await play(tester, 201);
+
+    expect(find.text('Thick ice'), findsOneWidget);
+    await tester.tapAndWait(find.text('Got it'), const Duration(seconds: 1));
+    expect(services.settings.hasSeenIntro(Intros.thickIce.id), isTrue);
+    await tester.close();
+
+    await play(tester, 202);
+    expect(find.text('Thick ice'), findsNothing);
+    await tester.close();
+  });
+
+  testWidgets('the thickest ice has no number and cracks more with each '
+      'block that leaves next to it, then shatters', (tester) async {
+    final number = [for (var number = 281; number <= 360; number++) number]
+        .firstWhere(
+          (number) => services.levels
+              .byNumber(number)
+              .board
+              .blocks
+              .any((block) => block.ice == 3),
+        );
+    final board = services.levels.byNumber(number).board;
+    final thick = board.blocks.firstWhere((block) => block.ice == 3);
+    await seeIntrosBut();
+    await play(tester, number);
+
+    final ice = find.descendant(
+      of: blockFinder(thick.id),
+      matching: find.byType(IceFace),
+    );
+    IceFace face() => tester.widget<IceFace>(ice);
+    expect(face().ice, 3);
+    expect(face().cracks, 0);
+    expect(
+      find.descendant(of: blockFinder(thick.id), matching: find.byType(Text)),
+      findsNothing,
+    );
+
+    final neighbours = board.neighboursOf(thick);
+    var current = board;
+    final seen = <int>{};
+    while (current.blockById(thick.id).isFrozen) {
+      final before = current.blockById(thick.id).ice;
+      current = await playUntil(
+        tester,
+        current,
+        done: (now) => now.blockById(thick.id).ice < before,
+        prefer: (block) => neighbours.contains(block.id),
+        avoid: {thick.id},
+      );
+      final now = current.blockById(thick.id);
+      if (now.isFrozen) {
+        expect(face().ice, now.ice);
+        expect(face().cracks, now.cracks);
+        seen.add(now.cracks);
+      }
+    }
+
+    expect(seen, contains(1), reason: 'the first crack showed');
+    expect(ice, findsNothing);
+    final cracks = sounds.played.where((played) => played.$1 == Sound.crack);
+    expect(cracks, hasLength(seen.length));
+    expect(
+      sounds.played.where((played) => played.$1 == Sound.shatter),
+      isNotEmpty,
+    );
+    await tester.close();
+  });
+
   testWidgets('twins show their intro, bump together and leave together', (
     tester,
   ) async {
